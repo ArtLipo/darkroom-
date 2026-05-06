@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PIXELSORT</title>
+<title>DARKROOM</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&display=swap');
 
@@ -28,187 +28,67 @@
     user-select: none;
   }
 
+  /* HEADER */
   #header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 16px 8px;
+    padding: 10px 16px 6px;
     border-bottom: 1px solid var(--dim);
     flex-shrink: 0;
   }
-
-  #title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 4px;
-    color: var(--fg);
-  }
-
-  #status {
-    font-size: 10px;
-    color: var(--accent);
-    letter-spacing: 2px;
-    animation: blink 1.4s step-end infinite;
-  }
-
+  #title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 4px; }
+  #status { font-size: 10px; color: var(--accent); letter-spacing: 2px; animation: blink 1.4s step-end infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 
+  /* VIEWFINDER */
   #viewfinder {
     flex: 1;
     position: relative;
     overflow: hidden;
     background: #000;
+    min-height: 0;
   }
+  #video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
 
-  #video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  #canvas {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: none;
-  }
-
-  #crosshair {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60px; height: 60px;
-    pointer-events: none;
-    opacity: 0.6;
-  }
-  #crosshair::before, #crosshair::after {
-    content: '';
-    position: absolute;
-    background: var(--fg);
-  }
-  #crosshair::before { width: 1px; height: 100%; left: 50%; top: 0; }
-  #crosshair::after  { width: 100%; height: 1px; top: 50%; left: 0; }
-
-  .corner {
-    position: absolute;
-    width: 14px; height: 14px;
-    border-color: var(--accent);
-    border-style: solid;
-    opacity: 0.8;
-  }
-  .corner.tl { top: 16px; left: 16px; border-width: 2px 0 0 2px; }
-  .corner.tr { top: 16px; right: 16px; border-width: 2px 2px 0 0; }
-  .corner.bl { bottom: 16px; left: 16px; border-width: 0 0 2px 2px; }
-  .corner.br { bottom: 16px; right: 16px; border-width: 0 2px 2px 0; }
+  .corner { position: absolute; width: 14px; height: 14px; border-color: var(--accent); border-style: solid; opacity: 0.8; }
+  .corner.tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+  .corner.tr { top: 12px; right: 12px; border-width: 2px 2px 0 0; }
+  .corner.bl { bottom: 12px; left: 12px; border-width: 0 0 2px 2px; }
+  .corner.br { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
 
   #scanline {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, transparent, var(--accent), transparent);
-    opacity: 0.4;
-    animation: scan 3s linear infinite;
-    pointer-events: none;
+    opacity: 0.4; animation: scan 3s linear infinite; pointer-events: none;
   }
   @keyframes scan { from { top: 0; } to { top: 100%; } }
 
-  #params {
-    padding: 10px 16px;
-    border-top: 1px solid var(--dim);
-    border-bottom: 1px solid var(--dim);
-    flex-shrink: 0;
+  #processing {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.85);
+    display: none; align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px; z-index: 10;
   }
+  #processing.active { display: flex; }
+  #proc-label { font-size: 10px; letter-spacing: 3px; color: var(--accent); animation: blink 0.6s step-end infinite; }
+  #proc-bar-wrap { width: 160px; height: 2px; background: var(--dim); }
+  #proc-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.05s linear; }
 
-  .param-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
-  }
-  .param-row:last-child { margin-bottom: 0; }
+  #flash { position: absolute; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 20; transition: opacity 0.15s; }
+  #flash.on { opacity: 1; }
 
-  .param-label {
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--mid);
-    width: 80px;
-    flex-shrink: 0;
-  }
-
-  .param-value {
-    font-size: 11px;
-    color: var(--accent);
-    width: 28px;
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  input[type=range] {
-    flex: 1;
-    -webkit-appearance: none;
-    height: 2px;
-    background: var(--dim);
-    outline: none;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px; height: 14px;
-    background: var(--accent);
-    border-radius: 0;
-    cursor: pointer;
-  }
-
-  #dir-toggle {
-    display: flex;
-    gap: 6px;
-    flex: 1;
-  }
-  .dir-btn {
-    flex: 1;
-    padding: 4px 0;
-    background: none;
-    border: 1px solid var(--dim);
-    color: var(--mid);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 1px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-  .dir-btn.active {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  #controls {
+  /* BOTTOM BAR — EKRAN 1 */
+  #bar-main {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 14px 20px;
+    padding: 12px 20px;
     flex-shrink: 0;
-    gap: 12px;
+    gap: 10px;
   }
 
-  #btn-flip {
-    width: 44px; height: 44px;
-    background: none;
-    border: 1px solid var(--dim);
-    color: var(--mid);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  #btn-flip:active { border-color: var(--accent); color: var(--accent); }
-
-  #btn-retake {
-    width: 44px; height: 44px;
+  #btn-flip, #btn-presets, #btn-retake, #btn-save {
     background: none;
     border: 1px solid var(--dim);
     color: var(--mid);
@@ -216,125 +96,157 @@
     font-size: 9px;
     letter-spacing: 1px;
     cursor: pointer;
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
     gap: 2px;
+    transition: border-color 0.15s, color 0.15s;
   }
+  #btn-flip { width: 44px; height: 44px; font-size: 18px; flex-direction: row; }
+  #btn-presets { width: 80px; height: 44px; border-color: var(--accent); color: var(--accent); font-size: 8px; }
+  #btn-retake { width: 44px; height: 44px; display: none; }
   #btn-retake.visible { display: flex; }
+  #btn-save { width: 44px; height: 44px; display: none; }
+  #btn-save.visible { display: flex; }
 
   #btn-shoot {
-    width: 68px; height: 68px;
-    border-radius: 50%;
-    background: var(--fg);
-    border: 3px solid var(--dim);
-    cursor: pointer;
-    position: relative;
-    flex-shrink: 0;
+    width: 68px; height: 68px; border-radius: 50%;
+    background: var(--fg); border: 3px solid var(--dim);
+    cursor: pointer; position: relative; flex-shrink: 0;
     transition: transform 0.1s;
   }
   #btn-shoot:active { transform: scale(0.93); }
   #btn-shoot::after {
-    content: '';
-    position: absolute;
-    top: 50%; left: 50%;
+    content: ''; position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
-    width: 54px; height: 54px;
-    border-radius: 50%;
+    width: 54px; height: 54px; border-radius: 50%;
+    background: var(--bg); border: 2px solid var(--accent);
+  }
+
+  /* EKRAN 2 — SIATKA PRESETÓW */
+  #screen-presets {
+    display: none;
+    flex-direction: column;
     background: var(--bg);
-    border: 2px solid var(--accent);
-  }
-
-  #btn-save {
-    width: 44px; height: 44px;
-    background: none;
-    border: 1px solid var(--dim);
-    color: var(--mid);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 1px;
-    cursor: pointer;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 2px;
-  }
-  #btn-save.visible { display: flex; }
-
-  #processing {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 12px;
-    z-index: 10;
-  }
-  #processing.active { display: flex; }
-  #proc-label {
-    font-size: 10px;
-    letter-spacing: 3px;
-    color: var(--accent);
-    animation: blink 0.6s step-end infinite;
-  }
-  #proc-bar-wrap { width: 160px; height: 2px; background: var(--dim); }
-  #proc-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.05s linear; }
-
-  #flash {
-    position: absolute;
-    inset: 0;
-    background: white;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 20;
-    transition: opacity 0.15s;
-  }
-  #flash.on { opacity: 1; }
-
-  #hidden-canvas { display: none; }
-
-  /* PRESETS */
-  #presets {
-    display: flex;
-    gap: 6px;
-    padding: 8px 16px;
-    border-bottom: 1px solid var(--dim);
     flex-shrink: 0;
   }
-  .preset-btn {
-    flex: 1;
-    padding: 5px 0;
-    background: none;
+  #screen-presets.active { display: flex; }
+
+  #presets-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--dim);
+  }
+  #presets-title { font-size: 9px; letter-spacing: 3px; color: var(--mid); }
+  #btn-presets-back {
+    background: none; border: none; color: var(--accent);
+    font-family: 'Share Tech Mono', monospace; font-size: 9px;
+    letter-spacing: 1px; cursor: pointer; padding: 4px 8px;
+  }
+
+  #presets-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 280px;
+  }
+
+  .preset-tile {
     border: 1px solid var(--dim);
-    color: var(--mid);
-    font-family: 'Share Tech Mono', monospace;
+    padding: 10px 4px;
+    text-align: center;
     font-size: 8px;
     letter-spacing: 1px;
+    color: var(--mid);
     cursor: pointer;
     transition: all 0.15s;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
   }
-  .preset-btn.active {
-    border-color: var(--accent);
-    color: var(--accent);
+  .preset-tile:active { border-color: var(--accent); color: var(--accent); }
+  .preset-tile.selected { border-color: var(--accent); color: var(--accent); }
+  .preset-tile .tile-icon { font-size: 18px; }
+
+  /* EKRAN 3 — SUWAKI */
+  #screen-params {
+    display: none;
+    flex-direction: column;
+    background: var(--bg);
+    flex-shrink: 0;
   }
+  #screen-params.active { display: flex; }
+
+  #params-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--dim);
+  }
+  #params-title { font-size: 10px; letter-spacing: 2px; color: var(--accent); }
+  #btn-params-back {
+    background: none; border: none; color: var(--mid);
+    font-family: 'Share Tech Mono', monospace; font-size: 9px;
+    letter-spacing: 1px; cursor: pointer; padding: 4px 8px;
+  }
+
+  #params-body { padding: 8px 16px 10px; }
+
+  .param-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+  }
+  .param-label { font-size: 8px; letter-spacing: 1px; color: var(--mid); width: 72px; flex-shrink: 0; }
+  .param-value { font-size: 10px; color: var(--accent); width: 26px; text-align: right; flex-shrink: 0; }
+
+  input[type=range] {
+    flex: 1; -webkit-appearance: none; height: 2px; background: var(--dim); outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 0; cursor: pointer;
+  }
+
+  /* CZ/B toggle */
+  #bw-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  #bw-toggle {
+    display: flex; gap: 4px; flex: 1;
+  }
+  .bw-btn {
+    flex: 1; padding: 3px 0; background: none; border: 1px solid var(--dim);
+    color: var(--mid); font-family: 'Share Tech Mono', monospace;
+    font-size: 8px; letter-spacing: 1px; cursor: pointer; transition: all 0.15s;
+  }
+  .bw-btn.active { border-color: var(--accent); color: var(--accent); }
+
+  /* DIR toggle */
+  #dir-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  #dir-toggle { display: flex; gap: 4px; flex: 1; }
+  .dir-btn {
+    flex: 1; padding: 3px 0; background: none; border: 1px solid var(--dim);
+    color: var(--mid); font-family: 'Share Tech Mono', monospace;
+    font-size: 8px; letter-spacing: 1px; cursor: pointer; transition: all 0.15s;
+  }
+  .dir-btn.active { border-color: var(--accent); color: var(--accent); }
+
+  #hidden-canvas { display: none; }
 </style>
 </head>
 <body>
 
 <div id="header">
-  <div id="title">PIXELSORT</div>
+  <div id="title">DARKROOM</div>
   <div id="status">● REC</div>
 </div>
 
 <div id="viewfinder">
   <video id="video" autoplay playsinline muted></video>
   <canvas id="canvas"></canvas>
-  <div id="crosshair"></div>
   <div class="corner tl"></div>
   <div class="corner tr"></div>
   <div class="corner bl"></div>
@@ -347,54 +259,101 @@
   <div id="flash"></div>
 </div>
 
-<div id="presets">
-  <button class="preset-btn" data-preset="kreski">KRESKI</button>
-  <button class="preset-btn" data-preset="sylwetka">SYLWETKA</button>
-  <button class="preset-btn" data-preset="deszcz">DESZCZ</button>
-  <button class="preset-btn" data-preset="kolor">KOLOR</button>
-  <button class="preset-btn" data-preset="drżenie">DRŻENIE</button>
-  <button class="preset-btn" data-preset="mięso">MIĘSO</button>
-  <button class="preset-btn" data-preset="paski">PASKI</button>
-  <button class="preset-btn" data-preset="sen">ZŁY SEN</button>
-  <button class="preset-btn" data-preset="spirala">SPIRALA</button>
-  <button class="preset-btn" data-preset="siatka">SIATKA</button>
+<!-- EKRAN 2: SIATKA PRESETÓW -->
+<div id="screen-presets">
+  <div id="presets-header">
+    <span id="presets-title">WYBIERZ PRESET</span>
+    <button id="btn-presets-back">✕ ZAMKNIJ</button>
+  </div>
+  <div id="presets-grid">
+    <div class="preset-tile" data-preset="kreski"><span class="tile-icon">▬</span>KRESKI</div>
+    <div class="preset-tile" data-preset="sylwetka"><span class="tile-icon">◐</span>SYLWETKA</div>
+    <div class="preset-tile" data-preset="deszcz"><span class="tile-icon">↓</span>DESZCZ</div>
+    <div class="preset-tile" data-preset="kolor"><span class="tile-icon">◈</span>KOLOR</div>
+    <div class="preset-tile" data-preset="drzenie"><span class="tile-icon">⋮</span>DRŻENIE</div>
+    <div class="preset-tile" data-preset="mieso"><span class="tile-icon">⬡</span>MIĘSO</div>
+    <div class="preset-tile" data-preset="paski"><span class="tile-icon">≡</span>PASKI</div>
+    <div class="preset-tile" data-preset="sen"><span class="tile-icon">⧉</span>ZŁY SEN</div>
+    <div class="preset-tile" data-preset="spirala"><span class="tile-icon">◎</span>SPIRALA</div>
+    <div class="preset-tile" data-preset="siatka"><span class="tile-icon">⊞</span>SIATKA</div>
+  </div>
 </div>
 
-<div id="params">
-  <div class="param-row" id="row-threshold">
-    <span class="param-label">THRESHOLD</span>
-    <input type="range" id="sl-threshold" min="0" max="255" value="80">
-    <span class="param-value" id="val-threshold">80</span>
+<!-- EKRAN 3: SUWAKI -->
+<div id="screen-params">
+  <div id="params-header">
+    <span id="params-title">KRESKI</span>
+    <button id="btn-params-back">← PRESETY</button>
   </div>
-  <div class="param-row">
-    <span class="param-label">INTENSITY</span>
-    <input type="range" id="sl-intensity" min="0" max="100" value="60">
-    <span class="param-value" id="val-intensity">60</span>
-  </div>
-  <div class="param-row" id="dir-row">
-    <span class="param-label">DIRECTION</span>
-    <div id="dir-toggle">
-      <button class="dir-btn active" data-dir="horizontal">HORIZ</button>
-      <button class="dir-btn" data-dir="vertical">VERT</button>
-      <button class="dir-btn" data-dir="both">BOTH</button>
+  <div id="params-body">
+    <!-- CZ/B -->
+    <div id="bw-row">
+      <span class="param-label">TRYB</span>
+      <div id="bw-toggle">
+        <button class="bw-btn active" data-bw="false">KOLOR</button>
+        <button class="bw-btn" data-bw="true">CZ/B</button>
+      </div>
+    </div>
+    <!-- Kontrast -->
+    <div class="param-row">
+      <span class="param-label">KONTRAST</span>
+      <input type="range" id="sl-contrast" min="50" max="200" value="100">
+      <span class="param-value" id="val-contrast">100</span>
+    </div>
+    <!-- Saturacja -->
+    <div class="param-row" id="row-saturation">
+      <span class="param-label">SATURACJA</span>
+      <input type="range" id="sl-saturation" min="0" max="200" value="100">
+      <span class="param-value" id="val-saturation">100</span>
+    </div>
+    <!-- Jasność -->
+    <div class="param-row">
+      <span class="param-label">JASNOŚĆ</span>
+      <input type="range" id="sl-brightness" min="-100" max="100" value="0">
+      <span class="param-value" id="val-brightness">0</span>
+    </div>
+    <!-- Threshold -->
+    <div class="param-row" id="row-threshold">
+      <span class="param-label">THRESHOLD</span>
+      <input type="range" id="sl-threshold" min="0" max="255" value="80">
+      <span class="param-value" id="val-threshold">80</span>
+    </div>
+    <!-- Intensity -->
+    <div class="param-row" id="row-intensity">
+      <span class="param-label">INTENSITY</span>
+      <input type="range" id="sl-intensity" min="0" max="100" value="60">
+      <span class="param-value" id="val-intensity">60</span>
+    </div>
+    <!-- Direction -->
+    <div id="dir-row">
+      <span class="param-label">KIERUNEK</span>
+      <div id="dir-toggle">
+        <button class="dir-btn active" data-dir="horizontal">HORIZ</button>
+        <button class="dir-btn" data-dir="vertical">VERT</button>
+        <button class="dir-btn" data-dir="both">BOTH</button>
+      </div>
+    </div>
+    <!-- Extra 1 -->
+    <div class="param-row" id="row-extra1" style="display:none">
+      <span class="param-label" id="label-extra1">PARAM 1</span>
+      <input type="range" id="sl-extra1" min="1" max="50" value="10">
+      <span class="param-value" id="val-extra1">10</span>
+    </div>
+    <!-- Extra 2 -->
+    <div class="param-row" id="row-extra2" style="display:none">
+      <span class="param-label" id="label-extra2">PARAM 2</span>
+      <input type="range" id="sl-extra2" min="1" max="50" value="5">
+      <span class="param-value" id="val-extra2">5</span>
     </div>
   </div>
-  <div class="param-row" id="row-extra1" style="display:none">
-    <span class="param-label" id="label-extra1">PARAM 1</span>
-    <input type="range" id="sl-extra1" min="1" max="50" value="10">
-    <span class="param-value" id="val-extra1">10</span>
-  </div>
-  <div class="param-row" id="row-extra2" style="display:none">
-    <span class="param-label" id="label-extra2">PARAM 2</span>
-    <input type="range" id="sl-extra2" min="1" max="50" value="5">
-    <span class="param-value" id="val-extra2">5</span>
-  </div>
 </div>
 
-<div id="controls">
+<!-- BOTTOM CONTROLS -->
+<div id="bar-main">
   <button id="btn-flip">⟳</button>
-  <button id="btn-shoot"></button>
   <button id="btn-retake">↺<br>RETAKE</button>
+  <button id="btn-shoot"></button>
+  <button id="btn-presets">◈<br>PRESETY</button>
   <button id="btn-save">↓<br>SAVE</button>
 </div>
 
@@ -410,154 +369,143 @@ const btnShoot = document.getElementById('btn-shoot');
 const btnRetake = document.getElementById('btn-retake');
 const btnSave = document.getElementById('btn-save');
 const btnFlip = document.getElementById('btn-flip');
+const btnPresets = document.getElementById('btn-presets');
+const btnPresetsBack = document.getElementById('btn-presets-back');
+const btnParamsBack = document.getElementById('btn-params-back');
 const processing = document.getElementById('processing');
 const procBar = document.getElementById('proc-bar');
 const flash = document.getElementById('flash');
 const statusEl = document.getElementById('status');
+const screenPresets = document.getElementById('screen-presets');
+const screenParams = document.getElementById('screen-params');
+const paramsTitle = document.getElementById('params-title');
 
 let direction = 'horizontal';
 let hasPhoto = false;
 let facingMode = 'environment';
+let activeFilter = 'pixelsort';
 let bw = false;
+let currentPreset = 'kreski';
 
-// Presets
+// PRESET DEFINITIONS
 const PRESETS = {
-  kreski:   { threshold: 180, intensity: 30, dir: 'horizontal', bw: true },
-  sylwetka: { threshold: 210, intensity: 45, dir: 'horizontal', bw: true },
-  deszcz:   { threshold: 100, intensity: 85, dir: 'both',       bw: true },
-  kolor:    { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false },
-  'drżenie':{ threshold: 80,  intensity: 60, dir: 'horizontal', bw: false },
-  'mięso':  { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false },
-  paski:    { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false },
-  sen:      { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false },
-  spirala:  { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false },
-  siatka:   { threshold: 60,  intensity: 80, dir: 'horizontal', bw: true },
-};
-
-const FILTER_TYPE = {
-  kreski: 'pixelsort', sylwetka: 'pixelsort', deszcz: 'pixelsort', kolor: 'pixelsort',
-  'drżenie': 'drzenie', 'mięso': 'mieso', paski: 'paski', sen: 'sen', spirala: 'spirala', siatka: 'siatka'
+  kreski:   { threshold: 180, intensity: 30, dir: 'horizontal', bw: true,  filter: 'pixelsort' },
+  sylwetka: { threshold: 210, intensity: 45, dir: 'horizontal', bw: true,  filter: 'pixelsort' },
+  deszcz:   { threshold: 100, intensity: 85, dir: 'both',       bw: true,  filter: 'pixelsort' },
+  kolor:    { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'pixelsort' },
+  drzenie:  { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'drzenie'   },
+  mieso:    { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'mieso'     },
+  paski:    { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'paski'     },
+  sen:      { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'sen'       },
+  spirala:  { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'spirala'   },
+  siatka:   { threshold: 60,  intensity: 80, dir: 'horizontal', bw: true,  filter: 'siatka'    },
 };
 
 const EXTRA_PARAMS = {
-  paski:   { e1: { label: 'SZEROKOŚĆ', min:1, max:30, val:5 }, e2: { label: 'PRZESUNIĘCIE', min:1, max:100, val:30 } },
-  sen:     { e1: { label: 'FRAGMENTY', min:2, max:20, val:8 }, e2: { label: 'CHAOS', min:1, max:10, val:5 } },
-  spirala: { e1: { label: 'FRAGMENTY', min:5, max:80, val:30 }, e2: { label: 'OBRÓT', min:0, max:180, val:90 } },
-  siatka:  { e1: { label: 'KONTRAST', min:1, max:10, val:3 }, e2: { label: 'PASKI', min:1, max:20, val:3 } },
+  paski:   { e1: { label: 'SZEROKOŚĆ',  min:1, max:30,  val:5  }, e2: { label: 'PRZESUNIĘCIE', min:1, max:100, val:30 } },
+  sen:     { e1: { label: 'FRAGMENTY', min:2, max:20,  val:8  }, e2: { label: 'CHAOS',        min:1, max:10,  val:5  } },
+  spirala: { e1: { label: 'FRAGMENTY', min:5, max:80,  val:30 }, e2: { label: 'OBRÓT',        min:0, max:180, val:90 } },
+  siatka:  { e1: { label: 'KONTRAST',  min:1, max:10,  val:3  }, e2: { label: 'PASKI',        min:1, max:20,  val:3  } },
 };
+
+const NO_THRESHOLD = ['drzenie','mieso','paski','sen','spirala','siatka'];
+const NO_INTENSITY = ['paski','sen','spirala','siatka'];
+const NO_DIR = ['drzenie','mieso','paski','sen','spirala','siatka'];
+
+// NAVIGATION
+btnPresets.addEventListener('click', () => {
+  screenPresets.classList.add('active');
+  screenParams.classList.remove('active');
+});
+
+btnPresetsBack.addEventListener('click', () => {
+  screenPresets.classList.remove('active');
+  screenParams.classList.remove('active');
+});
+
+btnParamsBack.addEventListener('click', () => {
+  screenParams.classList.remove('active');
+  screenPresets.classList.add('active');
+});
+
+document.querySelectorAll('.preset-tile').forEach(tile => {
+  tile.addEventListener('click', () => {
+    document.querySelectorAll('.preset-tile').forEach(t => t.classList.remove('selected'));
+    tile.classList.add('selected');
+    const name = tile.dataset.preset;
+    currentPreset = name;
+    applyPreset(name);
+    screenPresets.classList.remove('active');
+    screenParams.classList.add('active');
+  });
+});
 
 function applyPreset(name) {
   const p = PRESETS[name];
   if (!p) return;
+  activeFilter = p.filter;
+  bw = p.bw;
+  direction = p.dir;
+
+  // set sliders
   document.getElementById('sl-threshold').value = p.threshold;
   document.getElementById('val-threshold').textContent = p.threshold;
   document.getElementById('sl-intensity').value = p.intensity;
   document.getElementById('val-intensity').textContent = p.intensity;
-  direction = p.dir;
-  bw = p.bw;
+
+  // update UI
+  paramsTitle.textContent = name.toUpperCase();
+
+  // bw toggle
+  document.querySelectorAll('.bw-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.bw === String(p.bw));
+  });
+
+  // dir toggle
   document.querySelectorAll('.dir-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.dir === p.dir);
   });
-  document.querySelectorAll('.preset-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.preset === name);
-  });
+
+  // show/hide rows
+  document.getElementById('row-threshold').style.display = NO_THRESHOLD.includes(activeFilter) ? 'none' : 'flex';
+  document.getElementById('row-intensity').style.display = NO_INTENSITY.includes(activeFilter) ? 'none' : 'flex';
+  document.getElementById('dir-row').style.display = NO_DIR.includes(activeFilter) ? 'none' : 'flex';
+  document.getElementById('row-saturation').style.display = bw ? 'none' : 'flex';
+
+  // extra params
+  const ep = EXTRA_PARAMS[name];
+  const re1 = document.getElementById('row-extra1');
+  const re2 = document.getElementById('row-extra2');
+  if (ep) {
+    document.getElementById('label-extra1').textContent = ep.e1.label;
+    document.getElementById('sl-extra1').min = ep.e1.min;
+    document.getElementById('sl-extra1').max = ep.e1.max;
+    document.getElementById('sl-extra1').value = ep.e1.val;
+    document.getElementById('val-extra1').textContent = ep.e1.val;
+    document.getElementById('label-extra2').textContent = ep.e2.label;
+    document.getElementById('sl-extra2').min = ep.e2.min;
+    document.getElementById('sl-extra2').max = ep.e2.max;
+    document.getElementById('sl-extra2').value = ep.e2.val;
+    document.getElementById('val-extra2').textContent = ep.e2.val;
+    re1.style.display = 'flex';
+    re2.style.display = 'flex';
+  } else {
+    re1.style.display = 'none';
+    re2.style.display = 'none';
+  }
 }
 
-let activeFilter = 'pixelsort';
-
-document.querySelectorAll('.preset-btn').forEach(btn => {
+// BW toggle
+document.querySelectorAll('.bw-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const name = btn.dataset.preset;
-    activeFilter = FILTER_TYPE[name] || 'pixelsort';
-    applyPreset(name);
-    const rowT = document.getElementById('row-threshold');
-    const rowDir = document.getElementById('dir-row');
-    const rowE1 = document.getElementById('row-extra1');
-    const rowE2 = document.getElementById('row-extra2');
-    const noThreshold = ['drzenie','mieso','paski','sen','spirala','siatka'].includes(activeFilter);
-    rowT.style.display = noThreshold ? 'none' : 'flex';
-    rowDir.style.display = activeFilter === 'pixelsort' ? 'flex' : 'none';
-    const ep = EXTRA_PARAMS[name];
-    if (ep) {
-      document.getElementById('label-extra1').textContent = ep.e1.label;
-      document.getElementById('sl-extra1').min = ep.e1.min;
-      document.getElementById('sl-extra1').max = ep.e1.max;
-      document.getElementById('sl-extra1').value = ep.e1.val;
-      document.getElementById('val-extra1').textContent = ep.e1.val;
-      document.getElementById('label-extra2').textContent = ep.e2.label;
-      document.getElementById('sl-extra2').min = ep.e2.min;
-      document.getElementById('sl-extra2').max = ep.e2.max;
-      document.getElementById('sl-extra2').value = ep.e2.val;
-      document.getElementById('val-extra2').textContent = ep.e2.val;
-      rowE1.style.display = 'flex';
-      rowE2.style.display = 'flex';
-    } else {
-      rowE1.style.display = 'none';
-      rowE2.style.display = 'none';
-    }
+    document.querySelectorAll('.bw-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    bw = btn.dataset.bw === 'true';
+    document.getElementById('row-saturation').style.display = bw ? 'none' : 'flex';
   });
 });
 
-function applyDisplacement(imageData, intensity) {
-  const w = imageData.width, h = imageData.height;
-  const src = new Uint8ClampedArray(imageData.data);
-  const d = imageData.data;
-  const radius = Math.floor(intensity / 10) + 2;
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const dx = Math.floor((Math.random() * 2 - 1) * radius);
-      const dy = Math.floor((Math.random() * 2 - 1) * radius);
-      const sx = Math.max(0, Math.min(w-1, x + dx));
-      const sy = Math.max(0, Math.min(h-1, y + dy));
-      const dst = (y*w+x)*4;
-      const s = (sy*w+sx)*4;
-      d[dst] = src[s]; d[dst+1] = src[s+1]; d[dst+2] = src[s+2];
-    }
-  }
-  return imageData;
-}
-
-async function startCamera() {
-  // zatrzymaj poprzedni strumień
-  if (video.srcObject) {
-    video.srcObject.getTracks().forEach(t => t.stop());
-  }
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
-      audio: false
-    });
-    video.srcObject = stream;
-  } catch(e) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      video.srcObject = stream;
-    } catch(e2) {
-      alert('Brak dostępu do kamery.');
-    }
-  }
-}
-startCamera();
-
-// Przełączanie kamery
-btnFlip.addEventListener('click', () => {
-  if (hasPhoto) return;
-  facingMode = facingMode === 'environment' ? 'user' : 'environment';
-  startCamera();
-});
-
-// Sliders
-function bindSlider(id, valId) {
-  const sl = document.getElementById(id);
-  const vl = document.getElementById(valId);
-  sl.addEventListener('input', () => { vl.textContent = sl.value; });
-}
-bindSlider('sl-threshold', 'val-threshold');
-bindSlider('sl-intensity', 'val-intensity');
-bindSlider('sl-extra1', 'val-extra1');
-bindSlider('sl-extra2', 'val-extra2');
-
-// Direction
+// DIR toggle
 document.querySelectorAll('.dir-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
@@ -566,303 +514,318 @@ document.querySelectorAll('.dir-btn').forEach(btn => {
   });
 });
 
-function getLuminance(r, g, b) {
-  return 0.299 * r + 0.587 * g + 0.114 * b;
+// SLIDERS
+function bindSlider(id, valId) {
+  const sl = document.getElementById(id);
+  const vl = document.getElementById(valId);
+  sl.addEventListener('input', () => { vl.textContent = sl.value; });
+}
+bindSlider('sl-contrast', 'val-contrast');
+bindSlider('sl-saturation', 'val-saturation');
+bindSlider('sl-brightness', 'val-brightness');
+bindSlider('sl-threshold', 'val-threshold');
+bindSlider('sl-intensity', 'val-intensity');
+bindSlider('sl-extra1', 'val-extra1');
+bindSlider('sl-extra2', 'val-extra2');
+
+// CAMERA
+async function startCamera() {
+  if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false
+    });
+    video.srcObject = stream;
+  } catch(e) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      video.srcObject = stream;
+    } catch(e2) { alert('Brak dostępu do kamery.'); }
+  }
+}
+startCamera();
+
+btnFlip.addEventListener('click', () => {
+  if (hasPhoto) return;
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  startCamera();
+});
+
+// GLOBAL IMAGE ADJUSTMENTS
+function applyGlobal(imageData) {
+  const d = imageData.data;
+  const contrast = parseInt(document.getElementById('sl-contrast').value) / 100;
+  const saturation = bw ? 0 : parseInt(document.getElementById('sl-saturation').value) / 100;
+  const brightness = parseInt(document.getElementById('sl-brightness').value);
+
+  for (let i = 0; i < d.length; i += 4) {
+    let r = d[i], g = d[i+1], b2 = d[i+2];
+
+    // brightness
+    r += brightness; g += brightness; b2 += brightness;
+
+    // contrast
+    r = (r - 128) * contrast + 128;
+    g = (g - 128) * contrast + 128;
+    b2 = (b2 - 128) * contrast + 128;
+
+    // saturation
+    const gray = 0.299*r + 0.587*g + 0.114*b2;
+    r = gray + (r - gray) * saturation;
+    g = gray + (g - gray) * saturation;
+    b2 = gray + (b2 - gray) * saturation;
+
+    // bw
+    if (bw) {
+      const lum = 0.299*r + 0.587*g + 0.114*b2;
+      r = g = b2 = lum;
+    }
+
+    d[i]   = Math.max(0, Math.min(255, r));
+    d[i+1] = Math.max(0, Math.min(255, g));
+    d[i+2] = Math.max(0, Math.min(255, b2));
+  }
+  return imageData;
 }
 
+// ALGORITHMS
+function getLum(d, i) { return 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]; }
+
 function sortRow(data, width, y, threshold, intensity) {
-  const offset = y * width * 4;
-  let i = 0;
+  const off = y * width * 4; let i = 0;
   while (i < width) {
-    const lum = getLuminance(data[offset+i*4], data[offset+i*4+1], data[offset+i*4+2]);
-    if (lum > threshold) {
+    if (getLum(data, off+i*4) > threshold) {
       let j = i;
-      while (j < width && getLuminance(data[offset+j*4], data[offset+j*4+1], data[offset+j*4+2]) > threshold) j++;
+      while (j < width && getLum(data, off+j*4) > threshold) j++;
       const seg = [];
-      for (let k = i; k < j; k++) {
-        seg.push({ r: data[offset+k*4], g: data[offset+k*4+1], b: data[offset+k*4+2], lum: getLuminance(data[offset+k*4], data[offset+k*4+1], data[offset+k*4+2]) });
-      }
-      seg.sort((a,b) => a.lum - b.lum);
-      const applyCount = Math.floor(seg.length * intensity / 100);
-      for (let k = 0; k < applyCount; k++) {
-        data[offset+(i+k)*4] = seg[k].r;
-        data[offset+(i+k)*4+1] = seg[k].g;
-        data[offset+(i+k)*4+2] = seg[k].b;
-      }
+      for (let k = i; k < j; k++) seg.push({ r:data[off+k*4], g:data[off+k*4+1], b:data[off+k*4+2], l:getLum(data,off+k*4) });
+      seg.sort((a,b) => a.l-b.l);
+      const n = Math.floor(seg.length * intensity / 100);
+      for (let k = 0; k < n; k++) { data[off+(i+k)*4]=seg[k].r; data[off+(i+k)*4+1]=seg[k].g; data[off+(i+k)*4+2]=seg[k].b; }
       i = j;
-    } else { i++; }
+    } else i++;
   }
 }
 
-function sortColumn(data, width, height, x, threshold, intensity) {
+function sortCol(data, width, height, x, threshold, intensity) {
   let i = 0;
   while (i < height) {
-    const lum = getLuminance(data[(i*width+x)*4], data[(i*width+x)*4+1], data[(i*width+x)*4+2]);
-    if (lum > threshold) {
+    if (getLum(data, (i*width+x)*4) > threshold) {
       let j = i;
-      while (j < height && getLuminance(data[(j*width+x)*4], data[(j*width+x)*4+1], data[(j*width+x)*4+2]) > threshold) j++;
+      while (j < height && getLum(data, (j*width+x)*4) > threshold) j++;
       const seg = [];
-      for (let k = i; k < j; k++) {
-        seg.push({ r: data[(k*width+x)*4], g: data[(k*width+x)*4+1], b: data[(k*width+x)*4+2], lum: getLuminance(data[(k*width+x)*4], data[(k*width+x)*4+1], data[(k*width+x)*4+2]) });
-      }
-      seg.sort((a,b) => a.lum - b.lum);
-      const applyCount = Math.floor(seg.length * intensity / 100);
-      for (let k = 0; k < applyCount; k++) {
-        data[((i+k)*width+x)*4] = seg[k].r;
-        data[((i+k)*width+x)*4+1] = seg[k].g;
-        data[((i+k)*width+x)*4+2] = seg[k].b;
-      }
+      for (let k = i; k < j; k++) seg.push({ r:data[(k*width+x)*4], g:data[(k*width+x)*4+1], b:data[(k*width+x)*4+2], l:getLum(data,(k*width+x)*4) });
+      seg.sort((a,b) => a.l-b.l);
+      const n = Math.floor(seg.length * intensity / 100);
+      for (let k = 0; k < n; k++) { data[((i+k)*width+x)*4]=seg[k].r; data[((i+k)*width+x)*4+1]=seg[k].g; data[((i+k)*width+x)*4+2]=seg[k].b; }
       i = j;
-    } else { i++; }
+    } else i++;
   }
 }
 
 function applyPixelSort(imageData, threshold, intensity, dir) {
   const w = imageData.width, h = imageData.height;
   if (dir === 'horizontal' || dir === 'both') for (let y = 0; y < h; y++) sortRow(imageData.data, w, y, threshold, intensity);
-  if (dir === 'vertical' || dir === 'both') for (let x = 0; x < w; x++) sortColumn(imageData.data, w, h, x, threshold, intensity);
+  if (dir === 'vertical'   || dir === 'both') for (let x = 0; x < w; x++) sortCol(imageData.data, w, h, x, threshold, intensity);
   return imageData;
 }
 
-function applyMieso(imageData, intensity) {
+function applyDisplacement(imageData, intensity) {
   const w = imageData.width, h = imageData.height;
+  const src = new Uint8ClampedArray(imageData.data);
   const d = imageData.data;
-  const str = intensity / 100;
-  for (let i = 0; i < d.length; i += 4) {
-    const x = (i/4) % w, y = Math.floor((i/4) / w);
-    const l = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-    const n1 = Math.sin(x*0.4 + y*0.2) * Math.cos(x*0.1 - y*0.3);
-    const n2 = Math.sin(x*0.15 + y*0.08 + 1.5) * Math.cos(y*0.12);
-    const n = ((n1 + n2) * 0.5) * 0.5 + 0.5;
-    const vein = Math.abs(Math.sin(x*0.6 + y*0.4)) < 0.04 ? 0.35 : 1;
-    d[i]   = Math.min(255, (l * (1 + str*0.4) + n * str * 90)) * vein;
-    d[i+1] = Math.min(255, (l * (1 - str*0.5) + n * str * 20)) * vein;
-    d[i+2] = Math.min(255, (l * (1 - str*0.7) + n * str * 15)) * vein;
+  const radius = Math.floor(intensity / 10) + 2;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const dx = Math.floor((Math.random()*2-1)*radius);
+    const dy = Math.floor((Math.random()*2-1)*radius);
+    const sx = Math.max(0,Math.min(w-1,x+dx)), sy = Math.max(0,Math.min(h-1,y+dy));
+    const dst=(y*w+x)*4, s=(sy*w+sx)*4;
+    d[dst]=src[s]; d[dst+1]=src[s+1]; d[dst+2]=src[s+2];
   }
   return imageData;
 }
 
-function applyPaski(imageData, bandHeight, maxShift) {
-  const w = imageData.width, h = imageData.height;
-  const src = new Uint8ClampedArray(imageData.data);
-  const d = imageData.data;
-  let y = 0;
-  while (y < h) {
-    const bh = Math.max(1, Math.floor(bandHeight * (0.5 + Math.random())));
-    const shift = Math.random() > 0.5 ? Math.floor((Math.random() * 2 - 1) * maxShift) : 0;
-    for (let row = y; row < Math.min(y + bh, h); row++) {
-      for (let x = 0; x < w; x++) {
-        const sx = Math.max(0, Math.min(w-1, x - shift));
-        const dst = (row*w+x)*4, s = (row*w+sx)*4;
-        d[dst]=src[s]; d[dst+1]=src[s+1]; d[dst+2]=src[s+2];
+function applyMieso(imageData, intensity) {
+  const w = imageData.width, h = imageData.height, d = imageData.data, str = intensity/100;
+  for (let i = 0; i < d.length; i += 4) {
+    const x=(i/4)%w, y=Math.floor((i/4)/w);
+    const l=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+    const n=((Math.sin(x*0.4+y*0.2)*Math.cos(x*0.1-y*0.3)+Math.sin(x*0.15+y*0.08+1.5)*Math.cos(y*0.12))*0.5)*0.5+0.5;
+    const vein=Math.abs(Math.sin(x*0.6+y*0.4))<0.04?0.35:1;
+    d[i]=Math.min(255,(l*(1+str*0.4)+n*str*90))*vein;
+    d[i+1]=Math.min(255,(l*(1-str*0.5)+n*str*20))*vein;
+    d[i+2]=Math.min(255,(l*(1-str*0.7)+n*str*15))*vein;
+  }
+  return imageData;
+}
+
+function applyPaski(imageData, bandH, maxShift) {
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
+  let y=0;
+  while(y<h){
+    const bh=Math.max(1,Math.floor(bandH*(0.5+Math.random())));
+    const shift=Math.random()>0.5?Math.floor((Math.random()*2-1)*maxShift):0;
+    for(let row=y;row<Math.min(y+bh,h);row++)
+      for(let x=0;x<w;x++){
+        const sx=Math.max(0,Math.min(w-1,x-shift));
+        const dst=(row*w+x)*4, s=(row*w+sx)*4;
+        d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];
       }
-    }
-    y += bh;
+    y+=bh;
   }
   return imageData;
 }
 
 function applySen(imageData, pieces, chaos) {
-  const w = imageData.width, h = imageData.height;
-  const src = new Uint8ClampedArray(imageData.data);
-  const d = imageData.data;
-  const pw = Math.floor(w / pieces), ph = Math.floor(h / pieces);
-  const positions = [];
-  for (let r = 0; r < pieces; r++)
-    for (let c = 0; c < pieces; c++)
-      positions.push([r, c]);
-  const shuffled = [...positions];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const range = Math.max(1, Math.floor(chaos * shuffled.length / 10));
-    const j = Math.max(0, i - Math.floor(Math.random() * range));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
+  const pw=Math.floor(w/pieces), ph=Math.floor(h/pieces);
+  const positions=[];
+  for(let r=0;r<pieces;r++) for(let c=0;c<pieces;c++) positions.push([r,c]);
+  const shuffled=[...positions];
+  for(let i=shuffled.length-1;i>0;i--){
+    const range=Math.max(1,Math.floor(chaos*shuffled.length/10));
+    const j=Math.max(0,i-Math.floor(Math.random()*range));
+    [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
   }
-  for (let i = 0; i < positions.length; i++) {
-    const [fr, fc] = positions[i], [tr, tc] = shuffled[i];
-    for (let y = 0; y < ph; y++) {
-      for (let x = 0; x < pw; x++) {
-        const dst = ((tr*ph+y)*w + tc*pw+x)*4;
-        const s   = ((fr*ph+y)*w + fc*pw+x)*4;
-        d[dst]=src[s]; d[dst+1]=src[s+1]; d[dst+2]=src[s+2];
-      }
-    }
-  }
-  return imageData;
-}
-
-function applySiatka(imageData, contrast, stripeWidth) {
-  const w = imageData.width, h = imageData.height;
-  const d = imageData.data;
-  const threshold = parseInt(document.getElementById('sl-threshold').value);
-
-  // czarno-białe z kontrastem
-  for (let i = 0; i < d.length; i += 4) {
-    const lum = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-    const contrasted = Math.min(255, Math.max(0, (lum - 80) * contrast));
-    d[i] = d[i+1] = d[i+2] = contrasted;
-  }
-
-  // pixel sort pionowy
-  for (let x = 0; x < w; x++) {
-    let i = 0;
-    while (i < h) {
-      const lum = d[(i*w+x)*4];
-      if (lum > threshold) {
-        let j = i;
-        while (j < h && d[(j*w+x)*4] > threshold) j++;
-        const seg = [];
-        for (let k = i; k < j; k++) seg.push(d[(k*w+x)*4]);
-        seg.sort((a,b) => a-b);
-        for (let k = 0; k < seg.length; k++) {
-          d[((i+k)*w+x)*4] = seg[k];
-          d[((i+k)*w+x)*4+1] = seg[k];
-          d[((i+k)*w+x)*4+2] = seg[k];
-        }
-        i = j;
-      } else i++;
-    }
-  }
-
-  // pionowe paski
-  const sw = Math.max(1, stripeWidth);
-  for (let x = 0; x < w; x += sw*2) {
-    for (let y = 0; y < h; y++) {
-      for (let s = 0; s < sw && x+s < w; s++) {
-        const idx = (y*w+x+s)*4;
-        d[idx] = d[idx+1] = d[idx+2] = Math.floor(d[idx] * 0.12);
-      }
+  for(let i=0;i<positions.length;i++){
+    const[fr,fc]=positions[i],[tr,tc]=shuffled[i];
+    for(let y=0;y<ph;y++) for(let x=0;x<pw;x++){
+      const dst=((tr*ph+y)*w+tc*pw+x)*4, s=((fr*ph+y)*w+fc*pw+x)*4;
+      d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];
     }
   }
   return imageData;
 }
 
 function applySpirala(imageData, fragSize, maxAngle) {
-  const w = imageData.width, h = imageData.height;
-  const src = new Uint8ClampedArray(imageData.data);
-  const d = imageData.data;
-  const cx = w / 2, cy = h / 2;
-  const cols = Math.ceil(w / fragSize), rows = Math.ceil(h / fragSize);
-
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      const fx = col * fragSize + fragSize / 2;
-      const fy = row * fragSize + fragSize / 2;
-      const dx = fx - cx, dy = fy - cy;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      const maxDist = Math.sqrt(cx*cx + cy*cy);
-      // kąt rośnie ze spiralą od centrum
-      const angle = (dist / maxDist) * maxAngle * Math.PI / 180;
-      const cos = Math.cos(angle), sin = Math.sin(angle);
-
-      for (let py = row * fragSize; py < Math.min((row+1) * fragSize, h); py++) {
-        for (let px = col * fragSize; px < Math.min((col+1) * fragSize, w); px++) {
-          // obróć piksel wokół środka fragmentu
-          const lx = px - fx, ly = py - fy;
-          const rx = Math.round(lx * cos - ly * sin + fx);
-          const ry = Math.round(lx * sin + ly * cos + fy);
-          const dst = (py * w + px) * 4;
-          if (rx >= 0 && rx < w && ry >= 0 && ry < h) {
-            const s = (ry * w + rx) * 4;
-            d[dst]=src[s]; d[dst+1]=src[s+1]; d[dst+2]=src[s+2];
-          }
-        }
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
+  const cx=w/2, cy=h/2;
+  const cols=Math.ceil(w/fragSize), rows=Math.ceil(h/fragSize);
+  for(let row=0;row<rows;row++) for(let col=0;col<cols;col++){
+    const fx=col*fragSize+fragSize/2, fy=row*fragSize+fragSize/2;
+    const dx=fx-cx, dy=fy-cy;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const angle=(dist/Math.sqrt(cx*cx+cy*cy))*maxAngle*Math.PI/180;
+    const cos=Math.cos(angle), sin=Math.sin(angle);
+    for(let py=row*fragSize;py<Math.min((row+1)*fragSize,h);py++)
+      for(let px=col*fragSize;px<Math.min((col+1)*fragSize,w);px++){
+        const lx=px-fx, ly=py-fy;
+        const rx=Math.round(lx*cos-ly*sin+fx), ry=Math.round(lx*sin+ly*cos+fy);
+        const dst=(py*w+px)*4;
+        if(rx>=0&&rx<w&&ry>=0&&ry<h){const s=(ry*w+rx)*4;d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];}
       }
+  }
+  return imageData;
+}
+
+function applySiatka(imageData, contrast, stripeWidth) {
+  const w=imageData.width, h=imageData.height, d=imageData.data;
+  const threshold=parseInt(document.getElementById('sl-threshold').value);
+  for(let i=0;i<d.length;i+=4){
+    const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+    const c=Math.min(255,Math.max(0,(lum-80)*contrast));
+    d[i]=d[i+1]=d[i+2]=c;
+  }
+  for(let x=0;x<w;x++){
+    let i=0;
+    while(i<h){
+      if(d[(i*w+x)*4]>threshold){
+        let j=i;
+        while(j<h&&d[(j*w+x)*4]>threshold)j++;
+        const seg=[];
+        for(let k=i;k<j;k++)seg.push(d[(k*w+x)*4]);
+        seg.sort((a,b)=>a-b);
+        for(let k=0;k<seg.length;k++){d[((i+k)*w+x)*4]=seg[k];d[((i+k)*w+x)*4+1]=seg[k];d[((i+k)*w+x)*4+2]=seg[k];}
+        i=j;
+      }else i++;
     }
+  }
+  const sw=Math.max(1,stripeWidth);
+  for(let x=0;x<w;x+=sw*2) for(let y=0;y<h;y++) for(let s=0;s<sw&&x+s<w;s++){
+    const idx=(y*w+x+s)*4;
+    d[idx]=d[idx+1]=d[idx+2]=Math.floor(d[idx]*0.12);
   }
   return imageData;
 }
 
 function animateProgress(duration, cb) {
-  const start = performance.now();
-  function step(now) {
-    const pct = Math.min(100, ((now - start) / duration) * 100);
-    procBar.style.width = pct + '%';
-    if (pct < 100) requestAnimationFrame(step);
+  const start=performance.now();
+  function step(now){
+    const pct=Math.min(100,((now-start)/duration)*100);
+    procBar.style.width=pct+'%';
+    if(pct<100)requestAnimationFrame(step);
     else cb();
   }
   requestAnimationFrame(step);
 }
 
+// SHOOT
 btnShoot.addEventListener('click', () => {
   if (hasPhoto) return;
   flash.classList.add('on');
   setTimeout(() => flash.classList.remove('on'), 150);
 
-  const vw = video.videoWidth || 640;
-  const vh = video.videoHeight || 480;
-  hiddenCanvas.width = vw;
-  hiddenCanvas.height = vh;
+  const vw=video.videoWidth||640, vh=video.videoHeight||480;
+  hiddenCanvas.width=vw; hiddenCanvas.height=vh;
   hCtx.drawImage(video, 0, 0, vw, vh);
 
   processing.classList.add('active');
-  procBar.style.width = '0%';
-  statusEl.textContent = '● PROCESSING';
+  procBar.style.width='0%';
+  statusEl.textContent='● PROCESSING';
 
-  const threshold = parseInt(document.getElementById('sl-threshold').value);
-  const intensity = parseInt(document.getElementById('sl-intensity').value);
+  const threshold=parseInt(document.getElementById('sl-threshold').value);
+  const intensity=parseInt(document.getElementById('sl-intensity').value);
+  const extra1=parseInt(document.getElementById('sl-extra1').value);
+  const extra2=parseInt(document.getElementById('sl-extra2').value);
 
   setTimeout(() => {
-    const imageData = hCtx.getImageData(0, 0, vw, vh);
-    // BW conversion
-    if (bw) {
-      const d = imageData.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const g = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-        d[i] = d[i+1] = d[i+2] = g;
-      }
-    }
+    let imageData=hCtx.getImageData(0,0,vw,vh);
     animateProgress(800, () => {
-      const extra1 = parseInt(document.getElementById('sl-extra1').value);
-      const extra2 = parseInt(document.getElementById('sl-extra2').value);
-      if (activeFilter === 'drzenie') {
-        applyDisplacement(imageData, intensity);
-      } else if (activeFilter === 'mieso') {
-        applyMieso(imageData, intensity);
-      } else if (activeFilter === 'paski') {
-        applyPaski(imageData, extra1, extra2);
-      } else if (activeFilter === 'sen') {
-        applySen(imageData, extra1, extra2);
-      } else if (activeFilter === 'siatka') {
-        applySiatka(imageData, extra1 * 0.8, extra2);
-      } else if (activeFilter === 'spirala') {
-        applySpirala(imageData, extra1, extra2);
-      } else {
-        applyPixelSort(imageData, threshold, intensity, direction);
-      }
+      applyGlobal(imageData);
+      if(activeFilter==='drzenie') applyDisplacement(imageData, intensity);
+      else if(activeFilter==='mieso') applyMieso(imageData, intensity);
+      else if(activeFilter==='paski') applyPaski(imageData, extra1, extra2);
+      else if(activeFilter==='sen') applySen(imageData, extra1, extra2);
+      else if(activeFilter==='spirala') applySpirala(imageData, extra1, extra2);
+      else if(activeFilter==='siatka') applySiatka(imageData, extra1*0.8, extra2);
+      else applyPixelSort(imageData, threshold, intensity, direction);
+
       hCtx.putImageData(imageData, 0, 0);
-      canvas.width = vw;
-      canvas.height = vh;
+      canvas.width=vw; canvas.height=vh;
       ctx.drawImage(hiddenCanvas, 0, 0);
-      video.style.display = 'none';
-      canvas.style.display = 'block';
-      document.getElementById('scanline').style.display = 'none';
-      document.getElementById('crosshair').style.display = 'none';
+      video.style.display='none';
+      canvas.style.display='block';
+      document.getElementById('scanline').style.display='none';
       processing.classList.remove('active');
-      statusEl.textContent = '● READY';
+      statusEl.textContent='● READY';
       btnRetake.classList.add('visible');
       btnSave.classList.add('visible');
-      btnFlip.style.display = 'none';
-      hasPhoto = true;
+      btnFlip.style.display='none';
+      btnPresets.style.display='none';
+      hasPhoto=true;
     });
   }, 50);
 });
 
 btnRetake.addEventListener('click', () => {
-  canvas.style.display = 'none';
-  video.style.display = 'block';
-  document.getElementById('scanline').style.display = 'block';
-  document.getElementById('crosshair').style.display = 'block';
+  canvas.style.display='none';
+  video.style.display='block';
+  document.getElementById('scanline').style.display='block';
   btnRetake.classList.remove('visible');
   btnSave.classList.remove('visible');
-  btnFlip.style.display = 'flex';
-  statusEl.textContent = '● REC';
-  hasPhoto = false;
+  btnFlip.style.display='flex';
+  btnPresets.style.display='flex';
+  statusEl.textContent='● REC';
+  hasPhoto=false;
 });
 
 btnSave.addEventListener('click', () => {
-  const link = document.createElement('a');
-  link.download = 'pixelsort_' + Date.now() + '.jpg';
-  link.href = hiddenCanvas.toDataURL('image/jpeg', 0.92);
+  const link=document.createElement('a');
+  link.download='darkroom_'+Date.now()+'.jpg';
+  link.href=hiddenCanvas.toDataURL('image/jpeg', 0.92);
   link.click();
 });
 </script>
