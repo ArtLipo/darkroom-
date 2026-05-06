@@ -275,6 +275,8 @@
     <div class="preset-tile" data-preset="siatka"><span class="tile-icon">⊞</span>SIATKA</div>
     <div class="preset-tile" data-preset="ekspozycja"><span class="tile-icon">✦</span>EKSPOZYCJA</div>
     <div class="preset-tile" data-preset="kalejdoskop"><span class="tile-icon">❋</span>KALEJDOSKOP</div>
+    <div class="preset-tile" data-preset="kalejdoskop-kolo"><span class="tile-icon">◉</span>K. KOŁOWY</div>
+    <div class="preset-tile" data-preset="shuffle"><span class="tile-icon">⁙</span>SHUFFLE</div>
   </div>
 </div>
 
@@ -396,7 +398,9 @@ const PRESETS = {
   spirala:   { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'spirala'    },
   siatka:    { threshold: 60,  intensity: 80, dir: 'horizontal', bw: true,  filter: 'siatka'     },
   ekspozycja:  { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'ekspozycja'  },
-  kalejdoskop: { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop' },
+  kalejdoskop:      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop'      },
+  'kalejdoskop-kolo':{ threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop-kolo' },
+  shuffle:          { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'shuffle'          },
 };
 
 const EXTRA_PARAMS = {
@@ -404,13 +408,15 @@ const EXTRA_PARAMS = {
   sen:       { e1: { label: 'FRAGMENTY', min:2, max:20,  val:8  }, e2: { label: 'CHAOS',        min:1, max:10,  val:5  } },
   spirala:   { e1: { label: 'FRAGMENTY', min:5, max:80,  val:30 }, e2: { label: 'OBRÓT',        min:0, max:180, val:90 } },
   siatka:    { e1: { label: 'KONTRAST',  min:1, max:10,  val:3  }, e2: { label: 'PASKI',        min:1, max:20,  val:3  } },
-  ekspozycja:  { e1: { label: 'LICZBA',    min:2, max:10, val:4  }, e2: { label: 'PRZESUNIĘCIE', min:1, max:50, val:15 } },
-  kalejdoskop: { e1: { label: 'SEGMENTY',  min:2, max:16, val:4  }, e2: { label: 'OBRÓT',        min:0, max:360, val:0 } },
+  ekspozycja:        { e1: { label: 'LICZBA',    min:2, max:10, val:4  }, e2: { label: 'PRZESUNIĘCIE', min:1, max:50,  val:15 } },
+  kalejdoskop:       { e1: { label: 'SEGMENTY',  min:2, max:16, val:4  }, e2: { label: 'OBRÓT',        min:0, max:360, val:0  } },
+  'kalejdoskop-kolo':{ e1: { label: 'SEGMENTY',  min:2, max:16, val:8  }, e2: { label: 'OBRÓT',        min:0, max:360, val:0  } },
+  shuffle:           { e1: { label: 'BLOK',       min:4, max:60, val:12 }, e2: null },
 };
 
-const NO_THRESHOLD = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja','kalejdoskop'];
-const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop'];
-const NO_DIR = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja','kalejdoskop'];
+const NO_THRESHOLD = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle'];
+const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle'];
+const NO_DIR = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle'];
 
 // NAVIGATION
 btnPresets.addEventListener('click', () => {
@@ -482,13 +488,17 @@ function applyPreset(name) {
     document.getElementById('sl-extra1').max = ep.e1.max;
     document.getElementById('sl-extra1').value = ep.e1.val;
     document.getElementById('val-extra1').textContent = ep.e1.val;
-    document.getElementById('label-extra2').textContent = ep.e2.label;
-    document.getElementById('sl-extra2').min = ep.e2.min;
-    document.getElementById('sl-extra2').max = ep.e2.max;
-    document.getElementById('sl-extra2').value = ep.e2.val;
-    document.getElementById('val-extra2').textContent = ep.e2.val;
     re1.style.display = 'flex';
-    re2.style.display = 'flex';
+    if (ep.e2) {
+      document.getElementById('label-extra2').textContent = ep.e2.label;
+      document.getElementById('sl-extra2').min = ep.e2.min;
+      document.getElementById('sl-extra2').max = ep.e2.max;
+      document.getElementById('sl-extra2').value = ep.e2.val;
+      document.getElementById('val-extra2').textContent = ep.e2.val;
+      re2.style.display = 'flex';
+    } else {
+      re2.style.display = 'none';
+    }
   } else {
     re1.style.display = 'none';
     re2.style.display = 'none';
@@ -778,6 +788,47 @@ function applyEkspozycja(imageData, count, shift) {
   return imageData;
 }
 
+function applyKalejdoskopKolo(imageData, segments, rotation) {
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
+  const cx=w/2, cy=h/2;
+  const rMax=Math.min(cx,cy);
+  const angleStep=(Math.PI*2)/segments;
+  const rotRad=rotation*Math.PI/180;
+  const ys=[], xs=[];
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const dx=x-cx, dy=y-cy;
+    const r=Math.sqrt(dx*dx+dy*dy);
+    const dst=(y*w+x)*4;
+    if(r>rMax){ d[dst]=d[dst+1]=d[dst+2]=0; continue; }
+    let angle=Math.atan2(dy,dx)+rotRad;
+    angle=((angle%angleStep)+angleStep)%angleStep;
+    if(angle>angleStep/2) angle=angleStep-angle;
+    const sx=Math.round(cx+r*Math.cos(angle));
+    const sy=Math.round(cy+r*Math.sin(angle));
+    if(sx>=0&&sx<w&&sy>=0&&sy<h){const s=(sy*w+sx)*4;d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];}
+  }
+  return imageData;
+}
+
+function applyShuffle(imageData, blockSize) {
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
+  for(let y=0;y<h;y+=blockSize) for(let x=0;x<w;x+=blockSize){
+    const y2=Math.min(y+blockSize,h), x2=Math.min(x+blockSize,w);
+    const pixels=[];
+    for(let py=y;py<y2;py++) for(let px=x;px<x2;px++) pixels.push((py*w+px)*4);
+    for(let i=pixels.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      const a=pixels[i], b=pixels[j];
+      [d[a],d[b]]=[src[b],src[a]];
+      [d[a+1],d[b+1]]=[src[b+1],src[a+1]];
+      [d[a+2],d[b+2]]=[src[b+2],src[a+2]];
+    }
+  }
+  return imageData;
+}
+
 function applyKalejdoskop(imageData, segments, rotation) {
   const w=imageData.width, h=imageData.height;
   const src=new Uint8ClampedArray(imageData.data);
@@ -846,6 +897,8 @@ btnShoot.addEventListener('click', () => {
       else if(activeFilter==='siatka') applySiatka(imageData, extra1*0.8, extra2);
       else if(activeFilter==='ekspozycja') applyEkspozycja(imageData, extra1, extra2);
       else if(activeFilter==='kalejdoskop') applyKalejdoskop(imageData, extra1, extra2);
+      else if(activeFilter==='kalejdoskop-kolo') applyKalejdoskopKolo(imageData, extra1, extra2);
+      else if(activeFilter==='shuffle') applyShuffle(imageData, extra1);
       else applyPixelSort(imageData, threshold, intensity, direction);
 
       hCtx.putImageData(imageData, 0, 0);
