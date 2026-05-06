@@ -274,6 +274,7 @@
     <div class="preset-tile" data-preset="spirala"><span class="tile-icon">◎</span>SPIRALA</div>
     <div class="preset-tile" data-preset="siatka"><span class="tile-icon">⊞</span>SIATKA</div>
     <div class="preset-tile" data-preset="ekspozycja"><span class="tile-icon">✦</span>EKSPOZYCJA</div>
+    <div class="preset-tile" data-preset="kalejdoskop"><span class="tile-icon">❋</span>KALEJDOSKOP</div>
   </div>
 </div>
 
@@ -394,7 +395,8 @@ const PRESETS = {
   sen:       { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'sen'        },
   spirala:   { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'spirala'    },
   siatka:    { threshold: 60,  intensity: 80, dir: 'horizontal', bw: true,  filter: 'siatka'     },
-  ekspozycja:{ threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'ekspozycja' },
+  ekspozycja:  { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'ekspozycja'  },
+  kalejdoskop: { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop' },
 };
 
 const EXTRA_PARAMS = {
@@ -402,12 +404,13 @@ const EXTRA_PARAMS = {
   sen:       { e1: { label: 'FRAGMENTY', min:2, max:20,  val:8  }, e2: { label: 'CHAOS',        min:1, max:10,  val:5  } },
   spirala:   { e1: { label: 'FRAGMENTY', min:5, max:80,  val:30 }, e2: { label: 'OBRÓT',        min:0, max:180, val:90 } },
   siatka:    { e1: { label: 'KONTRAST',  min:1, max:10,  val:3  }, e2: { label: 'PASKI',        min:1, max:20,  val:3  } },
-  ekspozycja:{ e1: { label: 'LICZBA',    min:2, max:10,  val:4  }, e2: { label: 'PRZESUNIĘCIE', min:1, max:50,  val:15 } },
+  ekspozycja:  { e1: { label: 'LICZBA',    min:2, max:10, val:4  }, e2: { label: 'PRZESUNIĘCIE', min:1, max:50, val:15 } },
+  kalejdoskop: { e1: { label: 'SEGMENTY',  min:2, max:16, val:4  }, e2: { label: 'OBRÓT',        min:0, max:360, val:0 } },
 };
 
-const NO_THRESHOLD = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja'];
-const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja'];
-const NO_DIR = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja'];
+const NO_THRESHOLD = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja','kalejdoskop'];
+const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop'];
+const NO_DIR = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja','kalejdoskop'];
 
 // NAVIGATION
 btnPresets.addEventListener('click', () => {
@@ -775,6 +778,32 @@ function applyEkspozycja(imageData, count, shift) {
   return imageData;
 }
 
+function applyKalejdoskop(imageData, segments, rotation) {
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data);
+  const d=imageData.data;
+  const cx=w/2, cy=h/2;
+  const angleStep = (Math.PI*2) / segments;
+  const rotRad = rotation * Math.PI / 180;
+
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const dx=x-cx, dy=y-cy;
+    let angle=Math.atan2(dy,dx) + rotRad;
+    const r=Math.sqrt(dx*dx+dy*dy);
+    // fold into first segment
+    angle = ((angle % angleStep) + angleStep) % angleStep;
+    if(angle > angleStep/2) angle = angleStep - angle;
+    const sx=Math.round(cx + r*Math.cos(angle));
+    const sy=Math.round(cy + r*Math.sin(angle));
+    const dst=(y*w+x)*4;
+    if(sx>=0&&sx<w&&sy>=0&&sy<h){
+      const s=(sy*w+sx)*4;
+      d[dst]=src[s]; d[dst+1]=src[s+1]; d[dst+2]=src[s+2];
+    }
+  }
+  return imageData;
+}
+
 function animateProgress(duration, cb) {
   const start=performance.now();
   function step(now){
@@ -816,6 +845,7 @@ btnShoot.addEventListener('click', () => {
       else if(activeFilter==='spirala') applySpirala(imageData, extra1, extra2);
       else if(activeFilter==='siatka') applySiatka(imageData, extra1*0.8, extra2);
       else if(activeFilter==='ekspozycja') applyEkspozycja(imageData, extra1, extra2);
+      else if(activeFilter==='kalejdoskop') applyKalejdoskop(imageData, extra1, extra2);
       else applyPixelSort(imageData, threshold, intensity, direction);
 
       hCtx.putImageData(imageData, 0, 0);
