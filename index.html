@@ -266,16 +266,14 @@
     <button id="btn-presets-back">✕ ZAMKNIJ</button>
   </div>
   <div id="presets-grid">
-    <div class="preset-tile" data-preset="kreski"><span class="tile-icon">▬</span>KRESKI</div>
-    <div class="preset-tile" data-preset="sylwetka"><span class="tile-icon">◐</span>SYLWETKA</div>
-    <div class="preset-tile" data-preset="deszcz"><span class="tile-icon">↓</span>DESZCZ</div>
-    <div class="preset-tile" data-preset="kolor"><span class="tile-icon">◈</span>KOLOR</div>
+    <div class="preset-tile" data-preset="kolor"><span class="tile-icon">◈</span>PIXEL SORT</div>
     <div class="preset-tile" data-preset="drzenie"><span class="tile-icon">⋮</span>DRŻENIE</div>
     <div class="preset-tile" data-preset="mieso"><span class="tile-icon">⬡</span>MIĘSO</div>
     <div class="preset-tile" data-preset="paski"><span class="tile-icon">≡</span>PASKI</div>
     <div class="preset-tile" data-preset="sen"><span class="tile-icon">⧉</span>ZŁY SEN</div>
     <div class="preset-tile" data-preset="spirala"><span class="tile-icon">◎</span>SPIRALA</div>
     <div class="preset-tile" data-preset="siatka"><span class="tile-icon">⊞</span>SIATKA</div>
+    <div class="preset-tile" data-preset="ekspozycja"><span class="tile-icon">✦</span>EKSPOZYCJA</div>
   </div>
 </div>
 
@@ -389,28 +387,27 @@ let currentPreset = 'kreski';
 
 // PRESET DEFINITIONS
 const PRESETS = {
-  kreski:   { threshold: 180, intensity: 30, dir: 'horizontal', bw: true,  filter: 'pixelsort' },
-  sylwetka: { threshold: 210, intensity: 45, dir: 'horizontal', bw: true,  filter: 'pixelsort' },
-  deszcz:   { threshold: 100, intensity: 85, dir: 'both',       bw: true,  filter: 'pixelsort' },
-  kolor:    { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'pixelsort' },
-  drzenie:  { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'drzenie'   },
-  mieso:    { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'mieso'     },
-  paski:    { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'paski'     },
-  sen:      { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'sen'       },
-  spirala:  { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'spirala'   },
-  siatka:   { threshold: 60,  intensity: 80, dir: 'horizontal', bw: true,  filter: 'siatka'    },
+  kolor:     { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'pixelsort'  },
+  drzenie:   { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'drzenie'    },
+  mieso:     { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'mieso'      },
+  paski:     { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'paski'      },
+  sen:       { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'sen'        },
+  spirala:   { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'spirala'    },
+  siatka:    { threshold: 60,  intensity: 80, dir: 'horizontal', bw: true,  filter: 'siatka'     },
+  ekspozycja:{ threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'ekspozycja' },
 };
 
 const EXTRA_PARAMS = {
-  paski:   { e1: { label: 'SZEROKOŚĆ',  min:1, max:30,  val:5  }, e2: { label: 'PRZESUNIĘCIE', min:1, max:100, val:30 } },
-  sen:     { e1: { label: 'FRAGMENTY', min:2, max:20,  val:8  }, e2: { label: 'CHAOS',        min:1, max:10,  val:5  } },
-  spirala: { e1: { label: 'FRAGMENTY', min:5, max:80,  val:30 }, e2: { label: 'OBRÓT',        min:0, max:180, val:90 } },
-  siatka:  { e1: { label: 'KONTRAST',  min:1, max:10,  val:3  }, e2: { label: 'PASKI',        min:1, max:20,  val:3  } },
+  paski:     { e1: { label: 'SZEROKOŚĆ',  min:1, max:30,  val:5  }, e2: { label: 'PRZESUNIĘCIE', min:1, max:100, val:30 } },
+  sen:       { e1: { label: 'FRAGMENTY', min:2, max:20,  val:8  }, e2: { label: 'CHAOS',        min:1, max:10,  val:5  } },
+  spirala:   { e1: { label: 'FRAGMENTY', min:5, max:80,  val:30 }, e2: { label: 'OBRÓT',        min:0, max:180, val:90 } },
+  siatka:    { e1: { label: 'KONTRAST',  min:1, max:10,  val:3  }, e2: { label: 'PASKI',        min:1, max:20,  val:3  } },
+  ekspozycja:{ e1: { label: 'LICZBA',    min:2, max:10,  val:4  }, e2: { label: 'PRZESUNIĘCIE', min:1, max:50,  val:15 } },
 };
 
-const NO_THRESHOLD = ['drzenie','mieso','paski','sen','spirala','siatka'];
-const NO_INTENSITY = ['paski','sen','spirala','siatka'];
-const NO_DIR = ['drzenie','mieso','paski','sen','spirala','siatka'];
+const NO_THRESHOLD = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja'];
+const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja'];
+const NO_DIR = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja'];
 
 // NAVIGATION
 btnPresets.addEventListener('click', () => {
@@ -751,6 +748,33 @@ function applySiatka(imageData, contrast, stripeWidth) {
   return imageData;
 }
 
+function applyEkspozycja(imageData, count, shift) {
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data);
+  const d=imageData.data;
+  const result=new Float32Array(d.length);
+
+  for(let copy=0; copy<count; copy++){
+    const dx=Math.round((copy-(count-1)/2)*shift);
+    const dy=Math.round((copy-(count-1)/2)*shift*0.5);
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+      const sx=Math.max(0,Math.min(w-1,x-dx));
+      const sy=Math.max(0,Math.min(h-1,y-dy));
+      const dst=(y*w+x)*4, s=(sy*w+sx)*4;
+      result[dst]  +=src[s];
+      result[dst+1]+=src[s+1];
+      result[dst+2]+=src[s+2];
+      result[dst+3]=255;
+    }
+  }
+  for(let i=0;i<d.length;i+=4){
+    d[i]  =Math.min(255,result[i]/count);
+    d[i+1]=Math.min(255,result[i+1]/count);
+    d[i+2]=Math.min(255,result[i+2]/count);
+  }
+  return imageData;
+}
+
 function animateProgress(duration, cb) {
   const start=performance.now();
   function step(now){
@@ -791,6 +815,7 @@ btnShoot.addEventListener('click', () => {
       else if(activeFilter==='sen') applySen(imageData, extra1, extra2);
       else if(activeFilter==='spirala') applySpirala(imageData, extra1, extra2);
       else if(activeFilter==='siatka') applySiatka(imageData, extra1*0.8, extra2);
+      else if(activeFilter==='ekspozycja') applyEkspozycja(imageData, extra1, extra2);
       else applyPixelSort(imageData, threshold, intensity, direction);
 
       hCtx.putImageData(imageData, 0, 0);
