@@ -356,6 +356,7 @@
   <button class="preset-btn" data-preset="mięso">MIĘSO</button>
   <button class="preset-btn" data-preset="paski">PASKI</button>
   <button class="preset-btn" data-preset="sen">ZŁY SEN</button>
+  <button class="preset-btn" data-preset="spirala">SPIRALA</button>
 </div>
 
 <div id="params">
@@ -428,16 +429,18 @@ const PRESETS = {
   'mięso':  { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false },
   paski:    { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false },
   sen:      { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false },
+  spirala:  { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false },
 };
 
 const FILTER_TYPE = {
   kreski: 'pixelsort', sylwetka: 'pixelsort', deszcz: 'pixelsort', kolor: 'pixelsort',
-  'drżenie': 'drzenie', 'mięso': 'mieso', paski: 'paski', sen: 'sen'
+  'drżenie': 'drzenie', 'mięso': 'mieso', paski: 'paski', sen: 'sen', spirala: 'spirala'
 };
 
 const EXTRA_PARAMS = {
-  paski: { e1: { label: 'SZEROKOŚĆ', min:1, max:30, val:5 }, e2: { label: 'PRZESUNIĘCIE', min:1, max:100, val:30 } },
-  sen:   { e1: { label: 'FRAGMENTY', min:2, max:20, val:8 }, e2: { label: 'CHAOS', min:1, max:10, val:5 } },
+  paski:   { e1: { label: 'SZEROKOŚĆ', min:1, max:30, val:5 }, e2: { label: 'PRZESUNIĘCIE', min:1, max:100, val:30 } },
+  sen:     { e1: { label: 'FRAGMENTY', min:2, max:20, val:8 }, e2: { label: 'CHAOS', min:1, max:10, val:5 } },
+  spirala: { e1: { label: 'FRAGMENTY', min:5, max:80, val:30 }, e2: { label: 'OBRÓT', min:0, max:180, val:90 } },
 };
 
 function applyPreset(name) {
@@ -468,7 +471,7 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
     const rowDir = document.getElementById('dir-row');
     const rowE1 = document.getElementById('row-extra1');
     const rowE2 = document.getElementById('row-extra2');
-    const noThreshold = ['drzenie','mieso','paski','sen'].includes(activeFilter);
+    const noThreshold = ['drzenie','mieso','paski','sen','spirala'].includes(activeFilter);
     rowT.style.display = noThreshold ? 'none' : 'flex';
     rowDir.style.display = activeFilter === 'pixelsort' ? 'flex' : 'none';
     const ep = EXTRA_PARAMS[name];
@@ -684,6 +687,42 @@ function applySen(imageData, pieces, chaos) {
   return imageData;
 }
 
+function applySpirala(imageData, fragSize, maxAngle) {
+  const w = imageData.width, h = imageData.height;
+  const src = new Uint8ClampedArray(imageData.data);
+  const d = imageData.data;
+  const cx = w / 2, cy = h / 2;
+  const cols = Math.ceil(w / fragSize), rows = Math.ceil(h / fragSize);
+
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const fx = col * fragSize + fragSize / 2;
+      const fy = row * fragSize + fragSize / 2;
+      const dx = fx - cx, dy = fy - cy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const maxDist = Math.sqrt(cx*cx + cy*cy);
+      // kąt rośnie ze spiralą od centrum
+      const angle = (dist / maxDist) * maxAngle * Math.PI / 180;
+      const cos = Math.cos(angle), sin = Math.sin(angle);
+
+      for (let py = row * fragSize; py < Math.min((row+1) * fragSize, h); py++) {
+        for (let px = col * fragSize; px < Math.min((col+1) * fragSize, w); px++) {
+          // obróć piksel wokół środka fragmentu
+          const lx = px - fx, ly = py - fy;
+          const rx = Math.round(lx * cos - ly * sin + fx);
+          const ry = Math.round(lx * sin + ly * cos + fy);
+          const dst = (py * w + px) * 4;
+          if (rx >= 0 && rx < w && ry >= 0 && ry < h) {
+            const s = (ry * w + rx) * 4;
+            d[dst]=src[s]; d[dst+1]=src[s+1]; d[dst+2]=src[s+2];
+          }
+        }
+      }
+    }
+  }
+  return imageData;
+}
+
 function animateProgress(duration, cb) {
   const start = performance.now();
   function step(now) {
@@ -734,6 +773,8 @@ btnShoot.addEventListener('click', () => {
         applyPaski(imageData, extra1, extra2);
       } else if (activeFilter === 'sen') {
         applySen(imageData, extra1, extra2);
+      } else if (activeFilter === 'spirala') {
+        applySpirala(imageData, extra1, extra2);
       } else {
         applyPixelSort(imageData, threshold, intensity, direction);
       }
