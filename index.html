@@ -297,6 +297,7 @@
     <div class="preset-tile" data-preset="mnozenie"><span class="tile-icon">×</span>MNOŻENIE</div>
     <div class="preset-tile" data-preset="zespolone"><span class="tile-icon">ℂ</span>ZESPOLONE</div>
     <div class="preset-tile" data-preset="topo"><span class="tile-icon">⌇</span>TOPO</div>
+    <div class="preset-tile" data-preset="elektroforeza"><span class="tile-icon">⚡</span>ELEKTRO</div>
   </div>
 </div>
 
@@ -396,6 +397,15 @@
         <button class="kolor-btn" data-zmode="exp">E^Z</button>
       </div>
     </div>
+    <!-- Elektroforeza kierunek -->
+    <div id="row-elektro-select" style="display:none">
+      <div id="elektro-btns">
+        <button class="kolor-btn active" data-edir="right">→ PRAWO</button>
+        <button class="kolor-btn" data-edir="left">← LEWO</button>
+        <button class="kolor-btn" data-edir="down">↓ DÓŁ</button>
+        <button class="kolor-btn" data-edir="up">↑ GÓRA</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -456,7 +466,8 @@ const PRESETS = {
   mobius:        { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'mobius'     },
   mnozenie:      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'mnozenie'   },
   zespolone:     { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'zespolone'  },
-  topo:          { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'topo'       },
+  topo:          { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'topo'          },
+  elektroforeza: { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'elektroforeza' },
 };
 
 const EXTRA_PARAMS = {
@@ -473,13 +484,14 @@ const EXTRA_PARAMS = {
   mobius:        { e1: { label: 'PARAM A', min:1, max:20,  val:5  }, e2: { label: 'PARAM B', min:0, max:20,  val:5  } },
   mnozenie:      { e1: null, e2: null },
   zespolone:     { e1: { label: 'POTĘGA',   min:5, max:50, val:20 }, e2: null },
-  topo:          { e1: { label: 'LINIE',    min:5, max:50, val:20 }, e2: { label: 'GRUBOŚĆ', min:1, max:5, val:2 } },
+  topo:          { e1: { label: 'LINIE',   min:5, max:50,  val:20 }, e2: { label: 'GRUBOŚĆ',  min:1, max:5,   val:2  } },
+  elektroforeza: { e1: { label: 'DYSTANS', min:5, max:200, val:80 }, e2: null },
   'kolor-sort':  { e1: { label: 'ZAKRES',   min:5, max:90, val:30 }, e2: null },
 };
 
-const NO_THRESHOLD = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo'];
-const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo'];
-const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo'];
+const NO_THRESHOLD = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza'];
+const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza'];
+const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza'];
 
 // NAVIGATION
 btnPresets.addEventListener('click', () => {
@@ -574,20 +586,23 @@ function applyPreset(name) {
   document.getElementById('row-kolor-select').style.display = activeFilter === 'kolor-sort' ? 'block' : 'none';
   document.getElementById('row-mnozenie-select').style.display = activeFilter === 'mnozenie' ? 'block' : 'none';
   document.getElementById('row-zespolone-select').style.display = activeFilter === 'zespolone' ? 'block' : 'none';
+  document.getElementById('row-elektro-select').style.display = activeFilter === 'elektroforeza' ? 'block' : 'none';
 }
 
 let activeHue = 0;
 let activeMult = 'rg';
 let activeZmode = 'pow';
+let activeEdir = 'right';
 
 document.querySelectorAll('.kolor-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const group = btn.closest('#kolor-btns, #mnozenie-btns, #zespolone-btns');
+    const group = btn.closest('#kolor-btns, #mnozenie-btns, #zespolone-btns, #elektro-btns');
     group.querySelectorAll('.kolor-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     if (btn.dataset.hue !== undefined) activeHue = parseInt(btn.dataset.hue);
     if (btn.dataset.mult !== undefined) activeMult = btn.dataset.mult;
     if (btn.dataset.zmode !== undefined) activeZmode = btn.dataset.zmode;
+    if (btn.dataset.edir !== undefined) activeEdir = btn.dataset.edir;
   });
 });
 
@@ -936,6 +951,43 @@ function applyKolorSort(imageData, hue, range, threshold, intensity, dir) {
   return imageData;
 }
 
+function applyElektroforeza(imageData, distance, dir) {
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data);
+  const d=imageData.data;
+  // clear
+  for(let i=0;i<d.length;i++) d[i] = i%4===3 ? 255 : 0;
+
+  if(dir==='right'||dir==='left'){
+    const sign = dir==='right' ? 1 : -1;
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++){
+        const si=(y*w+x)*4;
+        const lum=0.299*src[si]+0.587*src[si+1]+0.114*src[si+2];
+        const migration = Math.floor(lum/255*distance)*sign;
+        const nx = Math.max(0,Math.min(w-1,x+migration));
+        const di=(y*w+nx)*4;
+        const dlum=0.299*d[di]+0.587*d[di+1]+0.114*d[di+2];
+        if(lum>dlum){d[di]=src[si];d[di+1]=src[si+1];d[di+2]=src[si+2];}
+      }
+    }
+  } else {
+    const sign = dir==='down' ? 1 : -1;
+    for(let x=0;x<w;x++){
+      for(let y=0;y<h;y++){
+        const si=(y*w+x)*4;
+        const lum=0.299*src[si]+0.587*src[si+1]+0.114*src[si+2];
+        const migration = Math.floor(lum/255*distance)*sign;
+        const ny = Math.max(0,Math.min(h-1,y+migration));
+        const di=(ny*w+x)*4;
+        const dlum=0.299*d[di]+0.587*d[di+1]+0.114*d[di+2];
+        if(lum>dlum){d[di]=src[si];d[di+1]=src[si+1];d[di+2]=src[si+2];}
+      }
+    }
+  }
+  return imageData;
+}
+
 function applyTopo(imageData, nLines, thickness) {
   const w=imageData.width, h=imageData.height, d=imageData.data;
   const src=new Uint8ClampedArray(d);
@@ -1201,6 +1253,7 @@ btnShoot.addEventListener('click', () => {
       else if(activeFilter==='mnozenie') applyMnozenie(imageData, activeMult);
       else if(activeFilter==='zespolone') applyZespolone(imageData, extra1, activeZmode);
       else if(activeFilter==='topo') applyTopo(imageData, extra1, extra2);
+      else if(activeFilter==='elektroforeza') applyElektroforeza(imageData, extra1, activeEdir);
       else applyPixelSort(imageData, threshold, intensity, direction);
 
       hCtx.putImageData(imageData, 0, 0);
