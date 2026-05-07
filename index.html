@@ -282,7 +282,7 @@
   <div id="presets-grid">
     <div class="preset-tile" data-preset="kolor"><span class="tile-icon">◈</span>PIXEL SORT</div>
     <div class="preset-tile" data-preset="drzenie"><span class="tile-icon">⋮</span>DRŻENIE</div>
-    <div class="preset-tile" data-preset="mieso"><span class="tile-icon">⬡</span>MIĘSO</div>
+    <div class="preset-tile" data-preset="krystalizacja"><span class="tile-icon">❄</span>KRYSZTAŁ</div>
     <div class="preset-tile" data-preset="paski"><span class="tile-icon">≡</span>PASKI</div>
     <div class="preset-tile" data-preset="sen"><span class="tile-icon">⧉</span>ZŁY SEN</div>
     <div class="preset-tile" data-preset="spirala"><span class="tile-icon">◎</span>SPIRALA</div>
@@ -292,6 +292,9 @@
     <div class="preset-tile" data-preset="kalejdoskop-kolo"><span class="tile-icon">◉</span>K. KOŁOWY</div>
     <div class="preset-tile" data-preset="shuffle"><span class="tile-icon">⁙</span>SHUFFLE</div>
     <div class="preset-tile" data-preset="kolor-sort"><span class="tile-icon">🎨</span>KOLOR SORT</div>
+    <div class="preset-tile" data-preset="osmoza"><span class="tile-icon">〜</span>OSMOZA</div>
+    <div class="preset-tile" data-preset="mobius"><span class="tile-icon">∞</span>MÖBIUS</div>
+    <div class="preset-tile" data-preset="mnozenie"><span class="tile-icon">×</span>MNOŻENIE</div>
   </div>
 </div>
 
@@ -373,6 +376,18 @@
         <button class="kolor-btn" data-hue="300" style="--c:#cc33cc">FIOLETOWY</button>
       </div>
     </div>
+    <!-- Mnozenie selector -->
+    <div id="row-mnozenie-select" style="display:none">
+      <div id="mnozenie-btns">
+        <button class="kolor-btn active" data-mult="rg">R×G</button>
+        <button class="kolor-btn" data-mult="rb">R×B</button>
+        <button class="kolor-btn" data-mult="gb">G×B</button>
+        <button class="kolor-btn" data-mult="cross">CROSS</button>
+        <button class="kolor-btn" data-mult="power">POWER</button>
+      </div>
+    </div>
+  </div>
+</div>
   </div>
 </div>
 
@@ -413,13 +428,13 @@ let hasPhoto = false;
 let facingMode = 'environment';
 let activeFilter = 'pixelsort';
 let bw = false;
-let currentPreset = 'kreski';
+let currentPreset = 'kolor';
 
 // PRESET DEFINITIONS
 const PRESETS = {
-  kolor:     { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'pixelsort'  },
-  drzenie:   { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'drzenie'    },
-  mieso:     { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'mieso'      },
+  kolor:         { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'pixelsort'     },
+  drzenie:       { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'drzenie'       },
+  krystalizacja: { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'krystalizacja' },
   paski:     { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'paski'      },
   sen:       { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'sen'        },
   spirala:   { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'spirala'    },
@@ -428,7 +443,10 @@ const PRESETS = {
   kalejdoskop:      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop'      },
   'kalejdoskop-kolo':{ threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop-kolo' },
   shuffle:           { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'shuffle'     },
-  'kolor-sort':      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kolor-sort'  },
+  'kolor-sort':  { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kolor-sort' },
+  osmoza:        { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'osmoza'     },
+  mobius:        { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'mobius'     },
+  mnozenie:      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'mnozenie'   },
 };
 
 const EXTRA_PARAMS = {
@@ -440,12 +458,16 @@ const EXTRA_PARAMS = {
   kalejdoskop:       { e1: { label: 'SEGMENTY',  min:2, max:16, val:4  }, e2: { label: 'OBRÓT',        min:0, max:360, val:0  } },
   'kalejdoskop-kolo':{ e1: { label: 'SEGMENTY',  min:2, max:16, val:8  }, e2: { label: 'OBRÓT',        min:0, max:360, val:0  } },
   shuffle:           { e1: { label: 'BLOK', min:4, max:60, val:12 }, e2: null },
-  'kolor-sort':      { e1: { label: 'ZAKRES', min:5, max:90, val:30 }, e2: null },
+  krystalizacja: { e1: { label: 'RAMIONA', min:3, max:12,  val:6  }, e2: { label: 'SIŁA',    min:0, max:100, val:50 } },
+  osmoza:        { e1: { label: 'SIŁA',    min:1, max:30,  val:8  }, e2: { label: 'PRÓG',    min:0, max:100, val:20 } },
+  mobius:        { e1: { label: 'PARAM A', min:1, max:20,  val:5  }, e2: { label: 'PARAM B', min:0, max:20,  val:5  } },
+  mnozenie:      { e1: null, e2: null },
+  'kolor-sort':  { e1: { label: 'ZAKRES',  min:5, max:90,  val:30 }, e2: null },
 };
 
-const NO_THRESHOLD = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle'];
-const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle'];
-const NO_DIR = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle'];
+const NO_THRESHOLD = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie'];
+const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie'];
+const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie'];
 
 // NAVIGATION
 btnPresets.addEventListener('click', () => {
@@ -512,12 +534,16 @@ function applyPreset(name) {
   const re1 = document.getElementById('row-extra1');
   const re2 = document.getElementById('row-extra2');
   if (ep) {
-    document.getElementById('label-extra1').textContent = ep.e1.label;
-    document.getElementById('sl-extra1').min = ep.e1.min;
-    document.getElementById('sl-extra1').max = ep.e1.max;
-    document.getElementById('sl-extra1').value = ep.e1.val;
-    document.getElementById('val-extra1').textContent = ep.e1.val;
-    re1.style.display = 'flex';
+    if (ep.e1) {
+      document.getElementById('label-extra1').textContent = ep.e1.label;
+      document.getElementById('sl-extra1').min = ep.e1.min;
+      document.getElementById('sl-extra1').max = ep.e1.max;
+      document.getElementById('sl-extra1').value = ep.e1.val;
+      document.getElementById('val-extra1').textContent = ep.e1.val;
+      re1.style.display = 'flex';
+    } else {
+      re1.style.display = 'none';
+    }
     if (ep.e2) {
       document.getElementById('label-extra2').textContent = ep.e2.label;
       document.getElementById('sl-extra2').min = ep.e2.min;
@@ -534,14 +560,19 @@ function applyPreset(name) {
   }
   // show/hide kolor selector
   document.getElementById('row-kolor-select').style.display = activeFilter === 'kolor-sort' ? 'block' : 'none';
+  document.getElementById('row-mnozenie-select').style.display = activeFilter === 'mnozenie' ? 'block' : 'none';
 }
 
 let activeHue = 0;
+let activeMult = 'rg';
+
 document.querySelectorAll('.kolor-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.kolor-btn').forEach(b => b.classList.remove('active'));
+    const group = btn.closest('#kolor-btns, #mnozenie-btns');
+    group.querySelectorAll('.kolor-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    activeHue = parseInt(btn.dataset.hue);
+    if (btn.dataset.hue !== undefined) activeHue = parseInt(btn.dataset.hue);
+    if (btn.dataset.mult !== undefined) activeMult = btn.dataset.mult;
   });
 });
 
@@ -890,6 +921,91 @@ function applyKolorSort(imageData, hue, range, threshold, intensity, dir) {
   return imageData;
 }
 
+function applyOsmoza(imageData, strength, threshold) {
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
+  const lum=new Float32Array(w*h);
+  for(let i=0;i<w*h;i++) lum[i]=0.299*src[i*4]+0.587*src[i*4+1]+0.114*src[i*4+2];
+
+  const thr = threshold / 100 * 50;
+  for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
+    const gx = lum[y*w+x+1] - lum[y*w+x-1];
+    const gy = lum[(y+1)*w+x] - lum[(y-1)*w+x];
+    const mag = Math.sqrt(gx*gx+gy*gy);
+    if(mag < thr) continue;
+    const nx = gx/mag, ny = gy/mag;
+    const sx = Math.round(Math.max(0,Math.min(w-1, x + nx*strength)));
+    const sy = Math.round(Math.max(0,Math.min(h-1, y + ny*strength)));
+    const dst=(y*w+x)*4, s=(sy*w+sx)*4;
+    d[dst]=src[s]; d[dst+1]=src[s+1]; d[dst+2]=src[s+2];
+  }
+  return imageData;
+}
+
+function applyMobius(imageData, paramA, paramB) {
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
+  const cx=w/2, cy=h/2;
+  const a = paramA/10, b = paramB/10;
+
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const re = (x-cx)/cx, im = (y-cy)/cy;
+    // z -> (z + b) / (a*z + 1)
+    const denom_re = a*re + 1, denom_im = a*im;
+    const denom_sq = denom_re*denom_re + denom_im*denom_im;
+    if(denom_sq < 0.001) continue;
+    const num_re = re + b, num_im = im;
+    const w_re = (num_re*denom_re + num_im*denom_im) / denom_sq;
+    const w_im = (num_im*denom_re - num_re*denom_im) / denom_sq;
+    const sx = Math.round(w_re * cx + cx);
+    const sy = Math.round(w_im * cy + cy);
+    const dst=(y*w+x)*4;
+    if(sx>=0&&sx<w&&sy>=0&&sy<h){
+      const s=(sy*w+sx)*4;
+      d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];
+    }
+  }
+  return imageData;
+}
+
+function applyMnozenie(imageData, mode) {
+  const d=imageData.data;
+  for(let i=0;i<d.length;i+=4){
+    const r=d[i], g=d[i+1], b=d[i+2];
+    if(mode==='rg'){ const v=r*g/255; d[i]=v;d[i+1]=v;d[i+2]=v; }
+    else if(mode==='rb'){ const v=r*b/255; d[i]=v;d[i+1]=v;d[i+2]=v; }
+    else if(mode==='gb'){ const v=g*b/255; d[i]=v;d[i+1]=v;d[i+2]=v; }
+    else if(mode==='cross'){ d[i]=Math.min(255,g*b/255);d[i+1]=Math.min(255,r*b/255);d[i+2]=Math.min(255,r*g/255); }
+    else if(mode==='power'){ d[i]=Math.min(255,r*r/255);d[i+1]=Math.min(255,g*r/255);d[i+2]=Math.min(255,b*g/255); }
+  }
+  return imageData;
+}
+
+function applyKrystalizacja(imageData, arms, strength) {
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
+  const cx=w/2, cy=h/2;
+  const sila=strength/100*0.8;
+  const angleStep=(Math.PI*2)/arms;
+
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const dx=x-cx, dy=y-cy;
+    const r=Math.sqrt(dx*dx+dy*dy);
+    const angle=Math.atan2(dy,dx);
+    const angleSnapped=Math.round(angle/angleStep)*angleStep;
+    const str=Math.min(1, r/(Math.max(w,h)/2)) * sila;
+    const newAngle=angle*(1-str)+angleSnapped*str;
+    const sx=Math.round(cx+r*Math.cos(newAngle));
+    const sy=Math.round(cy+r*Math.sin(newAngle));
+    const dst=(y*w+x)*4;
+    if(sx>=0&&sx<w&&sy>=0&&sy<h){
+      const s=(sy*w+sx)*4;
+      d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];
+    }
+  }
+  return imageData;
+}
+
 function applyKalejdoskopKolo(imageData, segments, rotation) {
   const w=imageData.width, h=imageData.height;
   const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
@@ -992,16 +1108,19 @@ btnShoot.addEventListener('click', () => {
     animateProgress(800, () => {
       applyGlobal(imageData);
       if(activeFilter==='drzenie') applyDisplacement(imageData, intensity);
-      else if(activeFilter==='mieso') applyMieso(imageData, intensity);
       else if(activeFilter==='paski') applyPaski(imageData, extra1, extra2);
       else if(activeFilter==='sen') applySen(imageData, extra1, extra2);
       else if(activeFilter==='spirala') applySpirala(imageData, extra1, extra2);
       else if(activeFilter==='siatka') applySiatka(imageData, extra1*0.8, extra2);
       else if(activeFilter==='ekspozycja') applyEkspozycja(imageData, extra1, extra2);
       else if(activeFilter==='kalejdoskop') applyKalejdoskop(imageData, extra1, extra2);
+      else if(activeFilter==='krystalizacja') applyKrystalizacja(imageData, extra1, extra2);
       else if(activeFilter==='kalejdoskop-kolo') applyKalejdoskopKolo(imageData, extra1, extra2);
       else if(activeFilter==='shuffle') applyShuffle(imageData, extra1);
       else if(activeFilter==='kolor-sort') applyKolorSort(imageData, activeHue, extra1, threshold, intensity, direction);
+      else if(activeFilter==='osmoza') applyOsmoza(imageData, extra1, extra2);
+      else if(activeFilter==='mobius') applyMobius(imageData, extra1, extra2);
+      else if(activeFilter==='mnozenie') applyMnozenie(imageData, activeMult);
       else applyPixelSort(imageData, threshold, intensity, direction);
 
       hCtx.putImageData(imageData, 0, 0);
