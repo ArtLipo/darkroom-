@@ -235,6 +235,20 @@
   .dir-btn.active { border-color: var(--accent); color: var(--accent); }
 
   #hidden-canvas { display: none; }
+
+  /* KOLOR SORT */
+  #row-kolor-select { padding: 4px 0; }
+  #kolor-btns { display: flex; flex-wrap: wrap; gap: 4px; }
+  .kolor-btn {
+    padding: 4px 8px; background: none;
+    border: 1px solid var(--dim); color: var(--mid);
+    font-family: 'Share Tech Mono', monospace; font-size: 8px;
+    letter-spacing: 1px; cursor: pointer; transition: all 0.15s;
+  }
+  .kolor-btn.active {
+    border-color: var(--c, var(--accent));
+    color: var(--c, var(--accent));
+  }
 </style>
 </head>
 <body>
@@ -277,6 +291,7 @@
     <div class="preset-tile" data-preset="kalejdoskop"><span class="tile-icon">❋</span>KALEJDOSKOP</div>
     <div class="preset-tile" data-preset="kalejdoskop-kolo"><span class="tile-icon">◉</span>K. KOŁOWY</div>
     <div class="preset-tile" data-preset="shuffle"><span class="tile-icon">⁙</span>SHUFFLE</div>
+    <div class="preset-tile" data-preset="kolor-sort"><span class="tile-icon">🎨</span>KOLOR SORT</div>
   </div>
 </div>
 
@@ -346,6 +361,18 @@
       <input type="range" id="sl-extra2" min="1" max="50" value="5">
       <span class="param-value" id="val-extra2">5</span>
     </div>
+    <!-- Kolor selector -->
+    <div id="row-kolor-select" style="display:none">
+      <div id="kolor-btns">
+        <button class="kolor-btn active" data-hue="0" style="--c:#ff3333">CZERWONY</button>
+        <button class="kolor-btn" data-hue="30" style="--c:#ff8800">POMARAŃCZ</button>
+        <button class="kolor-btn" data-hue="60" style="--c:#ffee00">ŻÓŁTY</button>
+        <button class="kolor-btn" data-hue="120" style="--c:#33cc33">ZIELONY</button>
+        <button class="kolor-btn" data-hue="180" style="--c:#00cccc">CYJAN</button>
+        <button class="kolor-btn" data-hue="240" style="--c:#3333ff">NIEBIESKI</button>
+        <button class="kolor-btn" data-hue="300" style="--c:#cc33cc">FIOLETOWY</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -400,7 +427,8 @@ const PRESETS = {
   ekspozycja:  { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'ekspozycja'  },
   kalejdoskop:      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop'      },
   'kalejdoskop-kolo':{ threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop-kolo' },
-  shuffle:          { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'shuffle'          },
+  shuffle:           { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'shuffle'     },
+  'kolor-sort':      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kolor-sort'  },
 };
 
 const EXTRA_PARAMS = {
@@ -411,7 +439,8 @@ const EXTRA_PARAMS = {
   ekspozycja:        { e1: { label: 'LICZBA',    min:2, max:10, val:4  }, e2: { label: 'PRZESUNIĘCIE', min:1, max:50,  val:15 } },
   kalejdoskop:       { e1: { label: 'SEGMENTY',  min:2, max:16, val:4  }, e2: { label: 'OBRÓT',        min:0, max:360, val:0  } },
   'kalejdoskop-kolo':{ e1: { label: 'SEGMENTY',  min:2, max:16, val:8  }, e2: { label: 'OBRÓT',        min:0, max:360, val:0  } },
-  shuffle:           { e1: { label: 'BLOK',       min:4, max:60, val:12 }, e2: null },
+  shuffle:           { e1: { label: 'BLOK', min:4, max:60, val:12 }, e2: null },
+  'kolor-sort':      { e1: { label: 'ZAKRES', min:5, max:90, val:30 }, e2: null },
 };
 
 const NO_THRESHOLD = ['drzenie','mieso','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle'];
@@ -503,7 +532,18 @@ function applyPreset(name) {
     re1.style.display = 'none';
     re2.style.display = 'none';
   }
+  // show/hide kolor selector
+  document.getElementById('row-kolor-select').style.display = activeFilter === 'kolor-sort' ? 'block' : 'none';
 }
+
+let activeHue = 0;
+document.querySelectorAll('.kolor-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.kolor-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeHue = parseInt(btn.dataset.hue);
+  });
+});
 
 // BW toggle
 document.querySelectorAll('.bw-btn').forEach(btn => {
@@ -788,6 +828,68 @@ function applyEkspozycja(imageData, count, shift) {
   return imageData;
 }
 
+function applyKolorSort(imageData, hue, range, threshold, intensity, dir) {
+  const w=imageData.width, h=imageData.height, d=imageData.data;
+
+  function getHue(r,g,b) {
+    r/=255; g/=255; b/=255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b), delta=max-min;
+    if(delta===0) return -1;
+    let h2=0;
+    if(max===r) h2=((g-b)/delta)%6;
+    else if(max===g) h2=(b-r)/delta+2;
+    else h2=(r-g)/delta+4;
+    h2=h2*60; if(h2<0) h2+=360;
+    return h2;
+  }
+
+  function inRange(r,g,b) {
+    const h2=getHue(r,g,b);
+    if(h2<0) return false;
+    const lum=0.299*r+0.587*g+0.114*b;
+    if(lum<threshold) return false;
+    let diff=Math.abs(h2-hue);
+    if(diff>180) diff=360-diff;
+    return diff<=range;
+  }
+
+  if(dir==='horizontal'||dir==='both'){
+    for(let y=0;y<h;y++){
+      const off=y*w*4; let i=0;
+      while(i<w){
+        if(inRange(d[off+i*4],d[off+i*4+1],d[off+i*4+2])){
+          let j=i;
+          while(j<w&&inRange(d[off+j*4],d[off+j*4+1],d[off+j*4+2]))j++;
+          const seg=[];
+          for(let k=i;k<j;k++) seg.push({r:d[off+k*4],g:d[off+k*4+1],b:d[off+k*4+2],l:0.299*d[off+k*4]+0.587*d[off+k*4+1]+0.114*d[off+k*4+2]});
+          seg.sort((a,b2)=>a.l-b2.l);
+          const n=Math.floor(seg.length*intensity/100);
+          for(let k=0;k<n;k++){d[off+(i+k)*4]=seg[k].r;d[off+(i+k)*4+1]=seg[k].g;d[off+(i+k)*4+2]=seg[k].b;}
+          i=j;
+        }else i++;
+      }
+    }
+  }
+  if(dir==='vertical'||dir==='both'){
+    for(let x=0;x<w;x++){
+      let i=0;
+      while(i<h){
+        if(inRange(d[(i*w+x)*4],d[(i*w+x)*4+1],d[(i*w+x)*4+2])){
+          let j=i;
+          while(j<h&&inRange(d[(j*w+x)*4],d[(j*w+x)*4+1],d[(j*w+x)*4+2]))j++;
+          const seg=[];
+          for(let k=i;k<j;k++) seg.push({r:d[(k*w+x)*4],g:d[(k*w+x)*4+1],b:d[(k*w+x)*4+2],l:0.299*d[(k*w+x)*4]+0.587*d[(k*w+x)*4+1]+0.114*d[(k*w+x)*4+2]});
+          seg.sort((a,b2)=>a.l-b2.l);
+          const n=Math.floor(seg.length*intensity/100);
+          for(let k=0;k<n;k++){d[((i+k)*w+x)*4]=seg[k].r;d[((i+k)*w+x)*4+1]=seg[k].g;d[((i+k)*w+x)*4+2]=seg[k].b;}
+          i=j;
+        }else i++;
+      }
+    }
+  }
+  return imageData;
+}
+
 function applyKalejdoskopKolo(imageData, segments, rotation) {
   const w=imageData.width, h=imageData.height;
   const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
@@ -899,6 +1001,7 @@ btnShoot.addEventListener('click', () => {
       else if(activeFilter==='kalejdoskop') applyKalejdoskop(imageData, extra1, extra2);
       else if(activeFilter==='kalejdoskop-kolo') applyKalejdoskopKolo(imageData, extra1, extra2);
       else if(activeFilter==='shuffle') applyShuffle(imageData, extra1);
+      else if(activeFilter==='kolor-sort') applyKolorSort(imageData, activeHue, extra1, threshold, intensity, direction);
       else applyPixelSort(imageData, threshold, intensity, direction);
 
       hCtx.putImageData(imageData, 0, 0);
