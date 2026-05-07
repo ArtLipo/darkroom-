@@ -387,8 +387,14 @@
         <button class="kolor-btn" data-mult="power">POWER</button>
       </div>
     </div>
-  </div>
-</div>
+    <!-- Zespolone selector -->
+    <div id="row-zespolone-select" style="display:none">
+      <div id="zespolone-btns">
+        <button class="kolor-btn active" data-zmode="pow">Z^N</button>
+        <button class="kolor-btn" data-zmode="inv">1/Z</button>
+        <button class="kolor-btn" data-zmode="exp">E^Z</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -464,12 +470,13 @@ const EXTRA_PARAMS = {
   osmoza:        { e1: { label: 'SIŁA',    min:1, max:30,  val:8  }, e2: { label: 'PRÓG',    min:0, max:100, val:20 } },
   mobius:        { e1: { label: 'PARAM A', min:1, max:20,  val:5  }, e2: { label: 'PARAM B', min:0, max:20,  val:5  } },
   mnozenie:      { e1: null, e2: null },
+  zespolone:     { e1: { label: 'POTĘGA', min:5, max:50, val:20 }, e2: null },
   'kolor-sort':  { e1: { label: 'ZAKRES',  min:5, max:90,  val:30 }, e2: null },
 };
 
-const NO_THRESHOLD = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie'];
-const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie'];
-const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie'];
+const NO_THRESHOLD = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone'];
+const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone'];
+const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone'];
 
 // NAVIGATION
 btnPresets.addEventListener('click', () => {
@@ -563,18 +570,21 @@ function applyPreset(name) {
   // show/hide kolor selector
   document.getElementById('row-kolor-select').style.display = activeFilter === 'kolor-sort' ? 'block' : 'none';
   document.getElementById('row-mnozenie-select').style.display = activeFilter === 'mnozenie' ? 'block' : 'none';
+  document.getElementById('row-zespolone-select').style.display = activeFilter === 'zespolone' ? 'block' : 'none';
 }
 
 let activeHue = 0;
 let activeMult = 'rg';
+let activeZmode = 'pow';
 
 document.querySelectorAll('.kolor-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const group = btn.closest('#kolor-btns, #mnozenie-btns');
+    const group = btn.closest('#kolor-btns, #mnozenie-btns, #zespolone-btns');
     group.querySelectorAll('.kolor-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     if (btn.dataset.hue !== undefined) activeHue = parseInt(btn.dataset.hue);
     if (btn.dataset.mult !== undefined) activeMult = btn.dataset.mult;
+    if (btn.dataset.zmode !== undefined) activeZmode = btn.dataset.zmode;
   });
 });
 
@@ -923,6 +933,47 @@ function applyKolorSort(imageData, hue, range, threshold, intensity, dir) {
   return imageData;
 }
 
+function applyZespolone(imageData, power, mode) {
+  const w=imageData.width, h=imageData.height;
+  const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
+  const cx=w/2, cy=h/2;
+  const p = power / 10;
+
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+    const re=(x-cx)/cx, im=(y-cy)/cy;
+    let w_re, w_im;
+
+    if(mode==='pow'){
+      // z^p using polar form
+      const r=Math.sqrt(re*re+im*im);
+      const theta=Math.atan2(im,re);
+      const rp=Math.pow(r,p);
+      w_re=rp*Math.cos(p*theta);
+      w_im=rp*Math.sin(p*theta);
+    } else if(mode==='inv'){
+      // 1/z
+      const denom=re*re+im*im;
+      if(denom<0.001) continue;
+      w_re=re/denom;
+      w_im=-im/denom;
+    } else {
+      // e^z
+      const er=Math.exp(re)*0.3;
+      w_re=er*Math.cos(im);
+      w_im=er*Math.sin(im);
+    }
+
+    const sx=Math.round(w_re*cx+cx);
+    const sy=Math.round(w_im*cy+cy);
+    const dst=(y*w+x)*4;
+    if(sx>=0&&sx<w&&sy>=0&&sy<h){
+      const s=(sy*w+sx)*4;
+      d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];
+    }
+  }
+  return imageData;
+}
+
 function applyOsmoza(imageData, strength, threshold) {
   const w=imageData.width, h=imageData.height;
   const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
@@ -1123,6 +1174,7 @@ btnShoot.addEventListener('click', () => {
       else if(activeFilter==='osmoza') applyOsmoza(imageData, extra1, extra2);
       else if(activeFilter==='mobius') applyMobius(imageData, extra1, extra2);
       else if(activeFilter==='mnozenie') applyMnozenie(imageData, activeMult);
+      else if(activeFilter==='zespolone') applyZespolone(imageData, extra1, activeZmode);
       else applyPixelSort(imageData, threshold, intensity, direction);
 
       hCtx.putImageData(imageData, 0, 0);
