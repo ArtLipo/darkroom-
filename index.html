@@ -242,19 +242,12 @@
     #bar-main { padding: 8px 16px; }
     #btn-flip { display: flex !important; }
     body { flex-direction: column; }
-    #screen-presets.active {
-      display: flex !important;
+    #screen-presets, #screen-params {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       z-index: 100;
-      background: rgba(0,0,0,0.95);
-    }
-    #screen-params.active {
-      display: flex !important;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      z-index: 100;
-      background: rgba(0,0,0,0.95);
+      background: rgba(0,0,0,0.97);
+      overflow-y: auto;
     }
   }
 
@@ -531,20 +524,18 @@ const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop
 const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza','grawitacja'];
 
 // NAVIGATION
-btnPresets.addEventListener('click', () => {
-  screenPresets.classList.add('active');
-  screenParams.classList.remove('active');
-});
+function showScreen(screen) {
+  screenPresets.style.display = 'none';
+  screenParams.style.display = 'none';
+  if (screen === 'presets') screenPresets.style.display = 'flex';
+  if (screen === 'params') screenParams.style.display = 'flex';
+}
 
-btnPresetsBack.addEventListener('click', () => {
-  screenPresets.classList.remove('active');
-  screenParams.classList.remove('active');
-});
+btnPresets.addEventListener('click', () => showScreen('presets'));
 
-btnParamsBack.addEventListener('click', () => {
-  screenParams.classList.remove('active');
-  screenPresets.classList.add('active');
-});
+btnPresetsBack.addEventListener('click', () => showScreen(null));
+
+btnParamsBack.addEventListener('click', () => showScreen('presets'));
 
 document.querySelectorAll('.preset-tile').forEach(tile => {
   tile.addEventListener('click', () => {
@@ -553,8 +544,7 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
     const name = tile.dataset.preset;
     currentPreset = name;
     applyPreset(name);
-    screenPresets.classList.remove('active');
-    screenParams.classList.add('active');
+    showScreen('params');
   });
 });
 
