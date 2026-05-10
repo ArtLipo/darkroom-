@@ -1430,10 +1430,8 @@ btnRetake.addEventListener('click', () => {
   btnPresets.style.display='flex';
   statusEl.textContent='● REC';
   hasPhoto=false;
-  if (isImported) {
-    isImported = false;
-    startCamera();
-  }
+  isImported=false;
+  startCamera();
 });
 
 btnSave.addEventListener('click', () => {
