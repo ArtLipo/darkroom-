@@ -239,16 +239,24 @@
 
   /* LANDSCAPE MODE */
   @media (orientation: landscape) {
-    #bar-main { padding: 8px 16px; }
+    #bar-main { 
+      padding: 8px 16px; 
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 200;
+      background: var(--bg);
+      border-top: 1px solid var(--dim);
+    }
     #btn-flip { display: flex !important; }
     body { flex-direction: column; }
+    #viewfinder { margin-bottom: 68px; }
     #screen-presets, #screen-params {
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 100;
       background: rgba(0,0,0,0.95);
       overflow-y: auto;
-      max-height: 60vh;
+      max-height: calc(100vh - 68px);
     }
   }
 
