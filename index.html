@@ -28,7 +28,6 @@
     user-select: none;
   }
 
-  /* HEADER */
   #header {
     display: flex;
     justify-content: space-between;
@@ -41,7 +40,6 @@
   #status { font-size: 10px; color: var(--accent); letter-spacing: 2px; animation: blink 1.4s step-end infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 
-  /* VIEWFINDER */
   #viewfinder {
     flex: 1;
     position: relative;
@@ -50,7 +48,7 @@
     min-height: 0;
   }
   #video { width: 100%; height: 100%; object-fit: cover; display: block; }
-  #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; display: none; background: #000; }
+  #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
 
   .corner { position: absolute; width: 14px; height: 14px; border-color: var(--accent); border-style: solid; opacity: 0.8; }
   .corner.tl { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
@@ -78,7 +76,6 @@
   #flash { position: absolute; inset: 0; background: white; opacity: 0; pointer-events: none; z-index: 20; transition: opacity 0.15s; }
   #flash.on { opacity: 1; }
 
-  /* BOTTOM BAR — EKRAN 1 */
   #bar-main {
     display: flex;
     align-items: center;
@@ -109,6 +106,7 @@
   #btn-retake.visible { display: flex; }
   #btn-save { width: 44px; height: 44px; display: none; }
   #btn-save.visible { display: flex; }
+  #btn-import { width: 44px; height: 44px; }
 
   #btn-shoot {
     width: 68px; height: 68px; border-radius: 50%;
@@ -124,7 +122,6 @@
     background: var(--bg); border: 2px solid var(--accent);
   }
 
-  /* EKRAN 2 — SIATKA PRESETÓW */
   #screen-presets {
     display: none;
     flex-direction: column;
@@ -174,7 +171,6 @@
   .preset-tile.selected { border-color: var(--accent); color: var(--accent); }
   .preset-tile .tile-icon { font-size: 18px; }
 
-  /* EKRAN 3 — SUWAKI */
   #screen-params {
     display: none;
     flex-direction: column;
@@ -212,11 +208,8 @@
     -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 0; cursor: pointer;
   }
 
-  /* CZ/B toggle */
   #bw-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-  #bw-toggle {
-    display: flex; gap: 4px; flex: 1;
-  }
+  #bw-toggle { display: flex; gap: 4px; flex: 1; }
   .bw-btn {
     flex: 1; padding: 3px 0; background: none; border: 1px solid var(--dim);
     color: var(--mid); font-family: 'Share Tech Mono', monospace;
@@ -224,7 +217,6 @@
   }
   .bw-btn.active { border-color: var(--accent); color: var(--accent); }
 
-  /* DIR toggle */
   #dir-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
   #dir-toggle { display: flex; gap: 4px; flex: 1; }
   .dir-btn {
@@ -234,34 +226,8 @@
   }
   .dir-btn.active { border-color: var(--accent); color: var(--accent); }
 
-  #btn-import { width: 44px; height: 44px; }
-  #btn-import:active { border-color: var(--accent); color: var(--accent); }
+  #hidden-canvas { display: none; }
 
-  /* LANDSCAPE MODE */
-  @media (orientation: landscape) {
-    #bar-main { padding: 8px 16px; }
-    #btn-flip { display: flex !important; }
-    body { flex-direction: column; }
-    #screen-presets, #screen-params {
-      position: fixed;
-      top: 36px; left: 0; right: 0;
-      bottom: 68px;
-      z-index: 100;
-      background: rgba(0,0,0,0.92);
-      overflow-y: auto;
-    }
-    #header { position: fixed; top: 0; left: 0; right: 0; z-index: 400; }
-    #bar-main {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 300;
-      background: var(--bg);
-      border-top: 1px solid var(--dim);
-    }
-    #viewfinder { margin-bottom: 68px; margin-top: 36px; }
-  }
-
-  /* KOLOR SORT */
   #row-kolor-select { padding: 4px 0; }
   #kolor-btns { display: flex; flex-wrap: wrap; gap: 4px; }
   .kolor-btn {
@@ -273,6 +239,25 @@
   .kolor-btn.active {
     border-color: var(--c, var(--accent));
     color: var(--c, var(--accent));
+  }
+
+  /* LANDSCAPE */
+  @media (orientation: landscape) {
+    #screen-presets.active, #screen-params.active {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 100;
+      background: rgba(0,0,0,0.96);
+      overflow-y: auto;
+      display: flex;
+    }
+    #bar-main {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 200;
+      background: var(--bg);
+      border-top: 1px solid var(--dim);
+    }
   }
 </style>
 </head>
@@ -298,7 +283,6 @@
   <div id="flash"></div>
 </div>
 
-<!-- EKRAN 2: SIATKA PRESETÓW -->
 <div id="screen-presets">
   <div id="presets-header">
     <span id="presets-title">WYBIERZ PRESET</span>
@@ -327,14 +311,12 @@
   </div>
 </div>
 
-<!-- EKRAN 3: SUWAKI -->
 <div id="screen-params">
   <div id="params-header">
-    <span id="params-title">KRESKI</span>
+    <span id="params-title">PRESET</span>
     <button id="btn-params-back">← PRESETY</button>
   </div>
   <div id="params-body">
-    <!-- CZ/B -->
     <div id="bw-row">
       <span class="param-label">TRYB</span>
       <div id="bw-toggle">
@@ -342,37 +324,31 @@
         <button class="bw-btn" data-bw="true">CZ/B</button>
       </div>
     </div>
-    <!-- Kontrast -->
     <div class="param-row">
       <span class="param-label">KONTRAST</span>
       <input type="range" id="sl-contrast" min="50" max="200" value="100">
       <span class="param-value" id="val-contrast">100</span>
     </div>
-    <!-- Saturacja -->
     <div class="param-row" id="row-saturation">
       <span class="param-label">SATURACJA</span>
       <input type="range" id="sl-saturation" min="0" max="200" value="100">
       <span class="param-value" id="val-saturation">100</span>
     </div>
-    <!-- Jasność -->
     <div class="param-row">
       <span class="param-label">JASNOŚĆ</span>
       <input type="range" id="sl-brightness" min="-100" max="100" value="0">
       <span class="param-value" id="val-brightness">0</span>
     </div>
-    <!-- Threshold -->
     <div class="param-row" id="row-threshold">
       <span class="param-label">THRESHOLD</span>
       <input type="range" id="sl-threshold" min="0" max="255" value="80">
       <span class="param-value" id="val-threshold">80</span>
     </div>
-    <!-- Intensity -->
     <div class="param-row" id="row-intensity">
       <span class="param-label">INTENSITY</span>
       <input type="range" id="sl-intensity" min="0" max="100" value="60">
       <span class="param-value" id="val-intensity">60</span>
     </div>
-    <!-- Direction -->
     <div id="dir-row">
       <span class="param-label">KIERUNEK</span>
       <div id="dir-toggle">
@@ -381,19 +357,16 @@
         <button class="dir-btn" data-dir="both">BOTH</button>
       </div>
     </div>
-    <!-- Extra 1 -->
     <div class="param-row" id="row-extra1" style="display:none">
       <span class="param-label" id="label-extra1">PARAM 1</span>
       <input type="range" id="sl-extra1" min="1" max="50" value="10">
       <span class="param-value" id="val-extra1">10</span>
     </div>
-    <!-- Extra 2 -->
     <div class="param-row" id="row-extra2" style="display:none">
       <span class="param-label" id="label-extra2">PARAM 2</span>
       <input type="range" id="sl-extra2" min="1" max="50" value="5">
       <span class="param-value" id="val-extra2">5</span>
     </div>
-    <!-- Kolor selector -->
     <div id="row-kolor-select" style="display:none">
       <div id="kolor-btns">
         <button class="kolor-btn active" data-hue="0" style="--c:#ff3333">CZERWONY</button>
@@ -405,7 +378,6 @@
         <button class="kolor-btn" data-hue="300" style="--c:#cc33cc">FIOLETOWY</button>
       </div>
     </div>
-    <!-- Mnozenie selector -->
     <div id="row-mnozenie-select" style="display:none">
       <div id="mnozenie-btns">
         <button class="kolor-btn active" data-mult="rg">R×G</button>
@@ -415,7 +387,6 @@
         <button class="kolor-btn" data-mult="power">POWER</button>
       </div>
     </div>
-    <!-- Zespolone selector -->
     <div id="row-zespolone-select" style="display:none">
       <div id="zespolone-btns">
         <button class="kolor-btn active" data-zmode="pow">Z^N</button>
@@ -423,7 +394,6 @@
         <button class="kolor-btn" data-zmode="exp">E^Z</button>
       </div>
     </div>
-    <!-- Elektroforeza kierunek -->
     <div id="row-elektro-select" style="display:none">
       <div id="elektro-btns">
         <button class="kolor-btn active" data-edir="right">→ PRAWO</button>
@@ -432,7 +402,6 @@
         <button class="kolor-btn" data-edir="up">↑ GÓRA</button>
       </div>
     </div>
-    <!-- Grawitacja kierunek -->
     <div id="row-grav-select" style="display:none">
       <div id="grav-btns">
         <button class="kolor-btn active" data-gdir="down">↓ DÓŁ</button>
@@ -444,7 +413,6 @@
   </div>
 </div>
 
-<!-- BOTTOM CONTROLS -->
 <div id="bar-main">
   <button id="btn-flip">⟳</button>
   <button id="btn-retake">↺<br>RETAKE</button>
@@ -453,9 +421,9 @@
   <button id="btn-import">⬆<br>IMPORT</button>
   <button id="btn-save">↓<br>SAVE</button>
 </div>
-<input type="file" id="file-input" accept="image/*" style="display:none">
 
 <canvas id="hidden-canvas"></canvas>
+<input type="file" id="file-input" accept="image/*" style="display:none">
 
 <script>
 const video = document.getElementById('video');
@@ -488,25 +456,24 @@ let activeFilter = 'pixelsort';
 let bw = false;
 let currentPreset = 'kolor';
 
-// PRESET DEFINITIONS
 const PRESETS = {
   kolor:         { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'pixelsort'     },
   drzenie:       { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'drzenie'       },
   krystalizacja: { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'krystalizacja' },
-  paski:     { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'paski'      },
-  sen:       { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'sen'        },
-  spirala:   { threshold: 80,  intensity: 60, dir: 'horizontal', bw: false, filter: 'spirala'    },
-  siatka:    { threshold: 60,  intensity: 80, dir: 'horizontal', bw: true,  filter: 'siatka'     },
-  ekspozycja:  { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'ekspozycja'  },
-  kalejdoskop:      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop'      },
-  'kalejdoskop-kolo':{ threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop-kolo' },
-  shuffle:           { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'shuffle'     },
-  'kolor-sort':  { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kolor-sort' },
+  paski:         { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'paski'         },
+  sen:           { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'sen'           },
+  spirala:       { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'spirala'       },
+  siatka:        { threshold: 60, intensity: 80, dir: 'horizontal', bw: true,  filter: 'siatka'        },
+  ekspozycja:    { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'ekspozycja'    },
+  kalejdoskop:       { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop'       },
+  'kalejdoskop-kolo':{ threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kalejdoskop-kolo'  },
+  shuffle:           { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'shuffle'          },
+  'kolor-sort':      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'kolor-sort'        },
   osmoza:        { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'osmoza'     },
   mobius:        { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'mobius'     },
   mnozenie:      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'mnozenie'   },
   zespolone:     { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'zespolone'  },
-  topo:          { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'topo'          },
+  topo:          { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'topo'       },
   elektroforeza: { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'elektroforeza' },
   grawitacja:    { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'grawitacja'    },
 };
@@ -520,15 +487,15 @@ const EXTRA_PARAMS = {
   kalejdoskop:       { e1: { label: 'SEGMENTY',  min:2, max:16, val:4  }, e2: { label: 'OBRÓT',        min:0, max:360, val:0  } },
   'kalejdoskop-kolo':{ e1: { label: 'SEGMENTY',  min:2, max:16, val:8  }, e2: { label: 'OBRÓT',        min:0, max:360, val:0  } },
   shuffle:           { e1: { label: 'BLOK', min:4, max:60, val:12 }, e2: null },
-  krystalizacja: { e1: { label: 'RAMIONA', min:3, max:12,  val:6  }, e2: { label: 'SIŁA',    min:0, max:100, val:50 } },
-  osmoza:        { e1: { label: 'SIŁA',    min:1, max:30,  val:8  }, e2: { label: 'PRÓG',    min:0, max:100, val:20 } },
-  mobius:        { e1: { label: 'PARAM A', min:1, max:20,  val:5  }, e2: { label: 'PARAM B', min:0, max:20,  val:5  } },
+  krystalizacja: { e1: { label: 'RAMIONA', min:3, max:12, val:6  }, e2: { label: 'SIŁA',    min:0, max:100, val:50 } },
+  osmoza:        { e1: { label: 'SIŁA',    min:1, max:30, val:8  }, e2: { label: 'PRÓG',    min:0, max:100, val:20 } },
+  mobius:        { e1: { label: 'PARAM A', min:1, max:20, val:5  }, e2: { label: 'PARAM B', min:0, max:20,  val:5  } },
   mnozenie:      { e1: null, e2: null },
-  zespolone:     { e1: { label: 'POTĘGA',   min:5, max:50, val:20 }, e2: null },
-  topo:          { e1: { label: 'LINIE',   min:5, max:50,  val:20 }, e2: { label: 'GRUBOŚĆ',  min:1, max:5,   val:2  } },
+  zespolone:     { e1: { label: 'POTĘGA',  min:5, max:50, val:20 }, e2: null },
+  topo:          { e1: { label: 'LINIE',   min:5, max:50, val:20 }, e2: { label: 'GRUBOŚĆ', min:1, max:5, val:2 } },
   elektroforeza: { e1: { label: 'DYSTANS', min:5, max:200, val:80 }, e2: null },
   grawitacja:    { e1: { label: 'SIŁA',    min:0, max:100, val:100}, e2: null },
-  'kolor-sort':  { e1: { label: 'ZAKRES',   min:5, max:90, val:30 }, e2: null },
+  'kolor-sort':  { e1: { label: 'ZAKRES',  min:5, max:90,  val:30 }, e2: null },
 };
 
 const NO_THRESHOLD = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza','grawitacja'];
@@ -536,18 +503,18 @@ const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop
 const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza','grawitacja'];
 
 // NAVIGATION
-function showScreen(screen) {
-  screenPresets.style.display = 'none';
-  screenParams.style.display = 'none';
-  if (screen === 'presets') screenPresets.style.display = 'flex';
-  if (screen === 'params') screenParams.style.display = 'flex';
-}
-
-btnPresets.addEventListener('click', () => showScreen('presets'));
-
-btnPresetsBack.addEventListener('click', () => showScreen(null));
-
-btnParamsBack.addEventListener('click', () => showScreen('presets'));
+btnPresets.addEventListener('click', () => {
+  screenPresets.classList.add('active');
+  screenParams.classList.remove('active');
+});
+btnPresetsBack.addEventListener('click', () => {
+  screenPresets.classList.remove('active');
+  screenParams.classList.remove('active');
+});
+btnParamsBack.addEventListener('click', () => {
+  screenParams.classList.remove('active');
+  screenPresets.classList.add('active');
+});
 
 document.querySelectorAll('.preset-tile').forEach(tile => {
   tile.addEventListener('click', () => {
@@ -556,14 +523,16 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
     const name = tile.dataset.preset;
     currentPreset = name;
     applyPreset(name);
-    showScreen('params');
-    // reset żeby można było strzelić ponownie z nowym presetem
+    screenPresets.classList.remove('active');
+    screenParams.classList.add('active');
+    // po wyborze presetu przy imporcie — przywróć oryginał
     if (isImported) {
       hasPhoto = false;
-      // przywróć oryginalny zaimportowany obraz
+      hiddenCanvas.width = originalCanvas.width;
+      hiddenCanvas.height = originalCanvas.height;
       hCtx.drawImage(originalCanvas, 0, 0);
-      canvas.width = hiddenCanvas.width;
-      canvas.height = hiddenCanvas.height;
+      canvas.width = originalCanvas.width;
+      canvas.height = originalCanvas.height;
       ctx.drawImage(originalCanvas, 0, 0);
     }
   });
@@ -575,33 +544,17 @@ function applyPreset(name) {
   activeFilter = p.filter;
   bw = p.bw;
   direction = p.dir;
-
-  // set sliders
   document.getElementById('sl-threshold').value = p.threshold;
   document.getElementById('val-threshold').textContent = p.threshold;
   document.getElementById('sl-intensity').value = p.intensity;
   document.getElementById('val-intensity').textContent = p.intensity;
-
-  // update UI
   paramsTitle.textContent = name.toUpperCase();
-
-  // bw toggle
-  document.querySelectorAll('.bw-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.bw === String(p.bw));
-  });
-
-  // dir toggle
-  document.querySelectorAll('.dir-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.dir === p.dir);
-  });
-
-  // show/hide rows
+  document.querySelectorAll('.bw-btn').forEach(b => b.classList.toggle('active', b.dataset.bw === String(p.bw)));
+  document.querySelectorAll('.dir-btn').forEach(b => b.classList.toggle('active', b.dataset.dir === p.dir));
   document.getElementById('row-threshold').style.display = NO_THRESHOLD.includes(activeFilter) ? 'none' : 'flex';
   document.getElementById('row-intensity').style.display = NO_INTENSITY.includes(activeFilter) ? 'none' : 'flex';
   document.getElementById('dir-row').style.display = NO_DIR.includes(activeFilter) ? 'none' : 'flex';
   document.getElementById('row-saturation').style.display = bw ? 'none' : 'flex';
-
-  // extra params
   const ep = EXTRA_PARAMS[name];
   const re1 = document.getElementById('row-extra1');
   const re2 = document.getElementById('row-extra2');
@@ -613,9 +566,7 @@ function applyPreset(name) {
       document.getElementById('sl-extra1').value = ep.e1.val;
       document.getElementById('val-extra1').textContent = ep.e1.val;
       re1.style.display = 'flex';
-    } else {
-      re1.style.display = 'none';
-    }
+    } else { re1.style.display = 'none'; }
     if (ep.e2) {
       document.getElementById('label-extra2').textContent = ep.e2.label;
       document.getElementById('sl-extra2').min = ep.e2.min;
@@ -623,14 +574,8 @@ function applyPreset(name) {
       document.getElementById('sl-extra2').value = ep.e2.val;
       document.getElementById('val-extra2').textContent = ep.e2.val;
       re2.style.display = 'flex';
-    } else {
-      re2.style.display = 'none';
-    }
-  } else {
-    re1.style.display = 'none';
-    re2.style.display = 'none';
-  }
-  // show/hide kolor selector
+    } else { re2.style.display = 'none'; }
+  } else { re1.style.display = 'none'; re2.style.display = 'none'; }
   document.getElementById('row-kolor-select').style.display = activeFilter === 'kolor-sort' ? 'block' : 'none';
   document.getElementById('row-mnozenie-select').style.display = activeFilter === 'mnozenie' ? 'block' : 'none';
   document.getElementById('row-zespolone-select').style.display = activeFilter === 'zespolone' ? 'block' : 'none';
@@ -657,7 +602,6 @@ document.querySelectorAll('.kolor-btn').forEach(btn => {
   });
 });
 
-// BW toggle
 document.querySelectorAll('.bw-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.bw-btn').forEach(b => b.classList.remove('active'));
@@ -667,7 +611,6 @@ document.querySelectorAll('.bw-btn').forEach(btn => {
   });
 });
 
-// DIR toggle
 document.querySelectorAll('.dir-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.dir-btn').forEach(b => b.classList.remove('active'));
@@ -676,7 +619,6 @@ document.querySelectorAll('.dir-btn').forEach(btn => {
   });
 });
 
-// SLIDERS
 function bindSlider(id, valId) {
   const sl = document.getElementById(id);
   const vl = document.getElementById(valId);
@@ -690,7 +632,6 @@ bindSlider('sl-intensity', 'val-intensity');
 bindSlider('sl-extra1', 'val-extra1');
 bindSlider('sl-extra2', 'val-extra2');
 
-// CAMERA
 async function startCamera() {
   if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
   try {
@@ -702,7 +643,7 @@ async function startCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       video.srcObject = stream;
-    } catch(e2) { alert('Brak dostępu do kamery.'); }
+    } catch(e2) { console.log('Brak kamery'); }
   }
 }
 startCamera();
@@ -713,36 +654,65 @@ btnFlip.addEventListener('click', () => {
   startCamera();
 });
 
-// GLOBAL IMAGE ADJUSTMENTS
+// IMPORT
+document.getElementById('btn-import').addEventListener('click', () => {
+  document.getElementById('file-input').click();
+});
+
+document.getElementById('file-input').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const vw = img.width, vh = img.height;
+      // zapisz oryginał
+      originalCanvas.width = vw;
+      originalCanvas.height = vh;
+      oCtx.drawImage(img, 0, 0, vw, vh);
+      // ustaw hidden i canvas
+      hiddenCanvas.width = vw;
+      hiddenCanvas.height = vh;
+      hCtx.drawImage(img, 0, 0, vw, vh);
+      canvas.width = vw;
+      canvas.height = vh;
+      ctx.drawImage(img, 0, 0, vw, vh);
+      // zatrzymaj kamerę
+      if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+      video.style.display = 'none';
+      canvas.style.display = 'block';
+      document.getElementById('scanline').style.display = 'none';
+      btnRetake.classList.add('visible');
+      btnSave.classList.add('visible');
+      btnFlip.style.display = 'none';
+      btnPresets.style.display = 'flex';
+      statusEl.textContent = '● IMPORTED';
+      hasPhoto = false;
+      isImported = true;
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
 function applyGlobal(imageData) {
   const d = imageData.data;
   const contrast = parseInt(document.getElementById('sl-contrast').value) / 100;
   const saturation = bw ? 0 : parseInt(document.getElementById('sl-saturation').value) / 100;
   const brightness = parseInt(document.getElementById('sl-brightness').value);
-
   for (let i = 0; i < d.length; i += 4) {
     let r = d[i], g = d[i+1], b2 = d[i+2];
-
-    // brightness
     r += brightness; g += brightness; b2 += brightness;
-
-    // contrast
     r = (r - 128) * contrast + 128;
     g = (g - 128) * contrast + 128;
     b2 = (b2 - 128) * contrast + 128;
-
-    // saturation
     const gray = 0.299*r + 0.587*g + 0.114*b2;
     r = gray + (r - gray) * saturation;
     g = gray + (g - gray) * saturation;
     b2 = gray + (b2 - gray) * saturation;
-
-    // bw
-    if (bw) {
-      const lum = 0.299*r + 0.587*g + 0.114*b2;
-      r = g = b2 = lum;
-    }
-
+    if (bw) { const lum = 0.299*r + 0.587*g + 0.114*b2; r = g = b2 = lum; }
     d[i]   = Math.max(0, Math.min(255, r));
     d[i+1] = Math.max(0, Math.min(255, g));
     d[i+2] = Math.max(0, Math.min(255, b2));
@@ -750,7 +720,6 @@ function applyGlobal(imageData) {
   return imageData;
 }
 
-// ALGORITHMS
 function getLum(d, i) { return 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]; }
 
 function sortRow(data, width, y, threshold, intensity) {
@@ -803,20 +772,6 @@ function applyDisplacement(imageData, intensity) {
     const sx = Math.max(0,Math.min(w-1,x+dx)), sy = Math.max(0,Math.min(h-1,y+dy));
     const dst=(y*w+x)*4, s=(sy*w+sx)*4;
     d[dst]=src[s]; d[dst+1]=src[s+1]; d[dst+2]=src[s+2];
-  }
-  return imageData;
-}
-
-function applyMieso(imageData, intensity) {
-  const w = imageData.width, h = imageData.height, d = imageData.data, str = intensity/100;
-  for (let i = 0; i < d.length; i += 4) {
-    const x=(i/4)%w, y=Math.floor((i/4)/w);
-    const l=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-    const n=((Math.sin(x*0.4+y*0.2)*Math.cos(x*0.1-y*0.3)+Math.sin(x*0.15+y*0.08+1.5)*Math.cos(y*0.12))*0.5)*0.5+0.5;
-    const vein=Math.abs(Math.sin(x*0.6+y*0.4))<0.04?0.35:1;
-    d[i]=Math.min(255,(l*(1+str*0.4)+n*str*90))*vein;
-    d[i+1]=Math.min(255,(l*(1-str*0.5)+n*str*20))*vein;
-    d[i+2]=Math.min(255,(l*(1-str*0.7)+n*str*15))*vein;
   }
   return imageData;
 }
@@ -918,7 +873,6 @@ function applyEkspozycja(imageData, count, shift) {
   const src=new Uint8ClampedArray(imageData.data);
   const d=imageData.data;
   const result=new Float32Array(d.length);
-
   for(let copy=0; copy<count; copy++){
     const dx=Math.round((copy-(count-1)/2)*shift);
     const dy=Math.round((copy-(count-1)/2)*shift*0.5);
@@ -926,23 +880,17 @@ function applyEkspozycja(imageData, count, shift) {
       const sx=Math.max(0,Math.min(w-1,x-dx));
       const sy=Math.max(0,Math.min(h-1,y-dy));
       const dst=(y*w+x)*4, s=(sy*w+sx)*4;
-      result[dst]  +=src[s];
-      result[dst+1]+=src[s+1];
-      result[dst+2]+=src[s+2];
-      result[dst+3]=255;
+      result[dst]+=src[s]; result[dst+1]+=src[s+1]; result[dst+2]+=src[s+2]; result[dst+3]=255;
     }
   }
   for(let i=0;i<d.length;i+=4){
-    d[i]  =Math.min(255,result[i]/count);
-    d[i+1]=Math.min(255,result[i+1]/count);
-    d[i+2]=Math.min(255,result[i+2]/count);
+    d[i]=Math.min(255,result[i]/count); d[i+1]=Math.min(255,result[i+1]/count); d[i+2]=Math.min(255,result[i+2]/count);
   }
   return imageData;
 }
 
 function applyKolorSort(imageData, hue, range, threshold, intensity, dir) {
   const w=imageData.width, h=imageData.height, d=imageData.data;
-
   function getHue(r,g,b) {
     r/=255; g/=255; b/=255;
     const max=Math.max(r,g,b), min=Math.min(r,g,b), delta=max-min;
@@ -954,7 +902,6 @@ function applyKolorSort(imageData, hue, range, threshold, intensity, dir) {
     h2=h2*60; if(h2<0) h2+=360;
     return h2;
   }
-
   function inRange(r,g,b) {
     const h2=getHue(r,g,b);
     if(h2<0) return false;
@@ -964,7 +911,6 @@ function applyKolorSort(imageData, hue, range, threshold, intensity, dir) {
     if(diff>180) diff=360-diff;
     return diff<=range;
   }
-
   if(dir==='horizontal'||dir==='both'){
     for(let y=0;y<h;y++){
       const off=y*w*4; let i=0;
@@ -1006,7 +952,6 @@ function applyGrawitacja(imageData, strength, dir) {
   const w=imageData.width, h=imageData.height;
   const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
   const s = strength/100;
-
   if(dir==='down'||dir==='up'){
     const reverse = dir==='down';
     for(let x=0;x<w;x++){
@@ -1049,34 +994,28 @@ function applyElektroforeza(imageData, distance, dir) {
   const w=imageData.width, h=imageData.height;
   const src=new Uint8ClampedArray(imageData.data);
   const d=imageData.data;
-  // clear
   for(let i=0;i<d.length;i++) d[i] = i%4===3 ? 255 : 0;
-
   if(dir==='right'||dir==='left'){
     const sign = dir==='right' ? 1 : -1;
-    for(let y=0;y<h;y++){
-      for(let x=0;x<w;x++){
-        const si=(y*w+x)*4;
-        const lum=0.299*src[si]+0.587*src[si+1]+0.114*src[si+2];
-        const migration = Math.floor(lum/255*distance)*sign;
-        const nx = Math.max(0,Math.min(w-1,x+migration));
-        const di=(y*w+nx)*4;
-        const dlum=0.299*d[di]+0.587*d[di+1]+0.114*d[di+2];
-        if(lum>dlum){d[di]=src[si];d[di+1]=src[si+1];d[di+2]=src[si+2];}
-      }
+    for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+      const si=(y*w+x)*4;
+      const lum=0.299*src[si]+0.587*src[si+1]+0.114*src[si+2];
+      const migration = Math.floor(lum/255*distance)*sign;
+      const nx = Math.max(0,Math.min(w-1,x+migration));
+      const di=(y*w+nx)*4;
+      const dlum=0.299*d[di]+0.587*d[di+1]+0.114*d[di+2];
+      if(lum>dlum){d[di]=src[si];d[di+1]=src[si+1];d[di+2]=src[si+2];}
     }
   } else {
     const sign = dir==='down' ? 1 : -1;
-    for(let x=0;x<w;x++){
-      for(let y=0;y<h;y++){
-        const si=(y*w+x)*4;
-        const lum=0.299*src[si]+0.587*src[si+1]+0.114*src[si+2];
-        const migration = Math.floor(lum/255*distance)*sign;
-        const ny = Math.max(0,Math.min(h-1,y+migration));
-        const di=(ny*w+x)*4;
-        const dlum=0.299*d[di]+0.587*d[di+1]+0.114*d[di+2];
-        if(lum>dlum){d[di]=src[si];d[di+1]=src[si+1];d[di+2]=src[si+2];}
-      }
+    for(let x=0;x<w;x++) for(let y=0;y<h;y++){
+      const si=(y*w+x)*4;
+      const lum=0.299*src[si]+0.587*src[si+1]+0.114*src[si+2];
+      const migration = Math.floor(lum/255*distance)*sign;
+      const ny = Math.max(0,Math.min(h-1,y+migration));
+      const di=(ny*w+x)*4;
+      const dlum=0.299*d[di]+0.587*d[di+1]+0.114*d[di+2];
+      if(lum>dlum){d[di]=src[si];d[di+1]=src[si+1];d[di+2]=src[si+2];}
     }
   }
   return imageData;
@@ -1086,7 +1025,6 @@ function applyTopo(imageData, nLines, thickness) {
   const w=imageData.width, h=imageData.height, d=imageData.data;
   const src=new Uint8ClampedArray(d);
   const step = 255 / nLines;
-
   for(let i=0;i<d.length;i+=4){
     const lum=0.299*src[i]+0.587*src[i+1]+0.114*src[i+2];
     const linePos = lum % step;
@@ -1109,38 +1047,23 @@ function applyZespolone(imageData, power, mode) {
   const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
   const cx=w/2, cy=h/2;
   const p = power / 10;
-
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){
     const re=(x-cx)/cx, im=(y-cy)/cy;
     let w_re, w_im;
-
     if(mode==='pow'){
-      // z^p using polar form
-      const r=Math.sqrt(re*re+im*im);
-      const theta=Math.atan2(im,re);
-      const rp=Math.pow(r,p);
-      w_re=rp*Math.cos(p*theta);
-      w_im=rp*Math.sin(p*theta);
+      const r=Math.sqrt(re*re+im*im), theta=Math.atan2(im,re), rp=Math.pow(r,p);
+      w_re=rp*Math.cos(p*theta); w_im=rp*Math.sin(p*theta);
     } else if(mode==='inv'){
-      // 1/z
       const denom=re*re+im*im;
       if(denom<0.001) continue;
-      w_re=re/denom;
-      w_im=-im/denom;
+      w_re=re/denom; w_im=-im/denom;
     } else {
-      // e^z
       const er=Math.exp(re)*0.3;
-      w_re=er*Math.cos(im);
-      w_im=er*Math.sin(im);
+      w_re=er*Math.cos(im); w_im=er*Math.sin(im);
     }
-
-    const sx=Math.round(w_re*cx+cx);
-    const sy=Math.round(w_im*cy+cy);
+    const sx=Math.round(w_re*cx+cx), sy=Math.round(w_im*cy+cy);
     const dst=(y*w+x)*4;
-    if(sx>=0&&sx<w&&sy>=0&&sy<h){
-      const s=(sy*w+sx)*4;
-      d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];
-    }
+    if(sx>=0&&sx<w&&sy>=0&&sy<h){const s=(sy*w+sx)*4;d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];}
   }
   return imageData;
 }
@@ -1150,7 +1073,6 @@ function applyOsmoza(imageData, strength, threshold) {
   const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
   const lum=new Float32Array(w*h);
   for(let i=0;i<w*h;i++) lum[i]=0.299*src[i*4]+0.587*src[i*4+1]+0.114*src[i*4+2];
-
   const thr = threshold / 100 * 50;
   for(let y=1;y<h-1;y++) for(let x=1;x<w-1;x++){
     const gx = lum[y*w+x+1] - lum[y*w+x-1];
@@ -1171,23 +1093,17 @@ function applyMobius(imageData, paramA, paramB) {
   const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
   const cx=w/2, cy=h/2;
   const a = paramA/10, b = paramB/10;
-
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){
     const re = (x-cx)/cx, im = (y-cy)/cy;
-    // z -> (z + b) / (a*z + 1)
     const denom_re = a*re + 1, denom_im = a*im;
     const denom_sq = denom_re*denom_re + denom_im*denom_im;
     if(denom_sq < 0.001) continue;
     const num_re = re + b, num_im = im;
     const w_re = (num_re*denom_re + num_im*denom_im) / denom_sq;
     const w_im = (num_im*denom_re - num_re*denom_im) / denom_sq;
-    const sx = Math.round(w_re * cx + cx);
-    const sy = Math.round(w_im * cy + cy);
+    const sx = Math.round(w_re * cx + cx), sy = Math.round(w_im * cy + cy);
     const dst=(y*w+x)*4;
-    if(sx>=0&&sx<w&&sy>=0&&sy<h){
-      const s=(sy*w+sx)*4;
-      d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];
-    }
+    if(sx>=0&&sx<w&&sy>=0&&sy<h){const s=(sy*w+sx)*4;d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];}
   }
   return imageData;
 }
@@ -1211,7 +1127,6 @@ function applyKrystalizacja(imageData, arms, strength) {
   const cx=w/2, cy=h/2;
   const sila=strength/100*0.8;
   const angleStep=(Math.PI*2)/arms;
-
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){
     const dx=x-cx, dy=y-cy;
     const r=Math.sqrt(dx*dx+dy*dy);
@@ -1219,13 +1134,9 @@ function applyKrystalizacja(imageData, arms, strength) {
     const angleSnapped=Math.round(angle/angleStep)*angleStep;
     const str=Math.min(1, r/(Math.max(w,h)/2)) * sila;
     const newAngle=angle*(1-str)+angleSnapped*str;
-    const sx=Math.round(cx+r*Math.cos(newAngle));
-    const sy=Math.round(cy+r*Math.sin(newAngle));
+    const sx=Math.round(cx+r*Math.cos(newAngle)), sy=Math.round(cy+r*Math.sin(newAngle));
     const dst=(y*w+x)*4;
-    if(sx>=0&&sx<w&&sy>=0&&sy<h){
-      const s=(sy*w+sx)*4;
-      d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];
-    }
+    if(sx>=0&&sx<w&&sy>=0&&sy<h){const s=(sy*w+sx)*4;d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];}
   }
   return imageData;
 }
@@ -1237,7 +1148,6 @@ function applyKalejdoskopKolo(imageData, segments, rotation) {
   const rMax=Math.min(cx,cy);
   const angleStep=(Math.PI*2)/segments;
   const rotRad=rotation*Math.PI/180;
-  const ys=[], xs=[];
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){
     const dx=x-cx, dy=y-cy;
     const r=Math.sqrt(dx*dx+dy*dy);
@@ -1246,8 +1156,7 @@ function applyKalejdoskopKolo(imageData, segments, rotation) {
     let angle=Math.atan2(dy,dx)+rotRad;
     angle=((angle%angleStep)+angleStep)%angleStep;
     if(angle>angleStep/2) angle=angleStep-angle;
-    const sx=Math.round(cx+r*Math.cos(angle));
-    const sy=Math.round(cy+r*Math.sin(angle));
+    const sx=Math.round(cx+r*Math.cos(angle)), sy=Math.round(cy+r*Math.sin(angle));
     if(sx>=0&&sx<w&&sy>=0&&sy<h){const s=(sy*w+sx)*4;d[dst]=src[s];d[dst+1]=src[s+1];d[dst+2]=src[s+2];}
   }
   return imageData;
@@ -1278,21 +1187,15 @@ function applyKalejdoskop(imageData, segments, rotation) {
   const cx=w/2, cy=h/2;
   const angleStep = (Math.PI*2) / segments;
   const rotRad = rotation * Math.PI / 180;
-
   for(let y=0;y<h;y++) for(let x=0;x<w;x++){
     const dx=x-cx, dy=y-cy;
     let angle=Math.atan2(dy,dx) + rotRad;
     const r=Math.sqrt(dx*dx+dy*dy);
-    // fold into first segment
     angle = ((angle % angleStep) + angleStep) % angleStep;
     if(angle > angleStep/2) angle = angleStep - angle;
-    const sx=Math.round(cx + r*Math.cos(angle));
-    const sy=Math.round(cy + r*Math.sin(angle));
+    const sx=Math.round(cx + r*Math.cos(angle)), sy=Math.round(cy + r*Math.sin(angle));
     const dst=(y*w+x)*4;
-    if(sx>=0&&sx<w&&sy>=0&&sy<h){
-      const s=(sy*w+sx)*4;
-      d[dst]=src[s]; d[dst+1]=src[s+1]; d[dst+2]=src[s+2];
-    }
+    if(sx>=0&&sx<w&&sy>=0&&sy<h){const s=(sy*w+sx)*4;d[dst]=src[s]; d[dst+1]=src[s+1]; d[dst+2]=src[s+2];}
   }
   return imageData;
 }
@@ -1372,54 +1275,14 @@ btnShoot.addEventListener('click', () => {
       btnFlip.style.display='none';
       btnPresets.style.display='flex';
       hasPhoto=true;
+      // zamknij suwaki po zrobieniu zdjęcia
+      screenPresets.classList.remove('active');
+      screenParams.classList.remove('active');
     });
   }, 50);
 });
 
-const btnImport = document.getElementById('btn-import');
-const fileInput = document.getElementById('file-input');
-
-btnImport.addEventListener('click', () => {
-  fileInput.click();
-});
-
-fileInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const img = new Image();
-    img.onload = () => {
-      const vw = img.width, vh = img.height;
-      hiddenCanvas.width = vw;
-      hiddenCanvas.height = vh;
-      hCtx.drawImage(img, 0, 0, vw, vh);
-      // zapisz oryginał
-      originalCanvas.width = vw;
-      originalCanvas.height = vh;
-      oCtx.drawImage(img, 0, 0, vw, vh);
-      canvas.width = vw;
-      canvas.height = vh;
-      ctx.drawImage(img, 0, 0, vw, vh);
-      // zatrzymaj kamerę
-      if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
-      video.style.display = 'none';
-      canvas.style.display = 'block';
-      document.getElementById('scanline').style.display = 'none';
-      btnRetake.classList.add('visible');
-      btnSave.classList.add('visible');
-      btnFlip.style.display = 'none';
-      btnPresets.style.display = 'flex'; // zostaw presety
-      statusEl.textContent = '● IMPORTED';
-      hasPhoto = false; // pozwól na przetworzenie
-      isImported = true;
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-  fileInput.value = '';
-});
-
+// RETAKE
 btnRetake.addEventListener('click', () => {
   canvas.style.display='none';
   video.style.display='block';
@@ -1431,22 +1294,19 @@ btnRetake.addEventListener('click', () => {
   statusEl.textContent='● REC';
   hasPhoto=false;
   isImported=false;
-  showScreen(null);
+  screenPresets.classList.remove('active');
+  screenParams.classList.remove('active');
   startCamera();
 });
 
+// SAVE
 btnSave.addEventListener('click', () => {
-  const link = document.createElement('a');
-  link.download = 'darkroom_' + Date.now() + '.jpg';
-  link.href = hiddenCanvas.toDataURL('image/jpeg', 0.92);
-  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
-  if (!isMobile) {
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } else {
-    link.click();
-  }
+  const link=document.createElement('a');
+  link.download='darkroom_'+Date.now()+'.jpg';
+  link.href=hiddenCanvas.toDataURL('image/jpeg', 0.92);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 });
 </script>
 </body>
