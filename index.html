@@ -252,12 +252,13 @@
     #viewfinder { margin-bottom: 68px; }
     #screen-presets, #screen-params {
       position: fixed;
-      top: 0; left: 0; right: 0;
+      top: 36px; left: 0; right: 0;
       bottom: 68px;
       z-index: 100;
-      background: rgba(0,0,0,0.95);
+      background: rgba(0,0,0,0.92);
       overflow-y: auto;
     }
+    #header { position: fixed; top: 0; left: 0; right: 0; z-index: 400; }
   }
 
   /* KOLOR SORT */
@@ -462,6 +463,8 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const hiddenCanvas = document.getElementById('hidden-canvas');
 const hCtx = hiddenCanvas.getContext('2d');
+const originalCanvas = document.createElement('canvas');
+const oCtx = originalCanvas.getContext('2d');
 const btnShoot = document.getElementById('btn-shoot');
 const btnRetake = document.getElementById('btn-retake');
 const btnSave = document.getElementById('btn-save');
@@ -554,6 +557,15 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
     currentPreset = name;
     applyPreset(name);
     showScreen('params');
+    // reset żeby można było strzelić ponownie z nowym presetem
+    if (isImported) {
+      hasPhoto = false;
+      // przywróć oryginalny zaimportowany obraz
+      hCtx.drawImage(originalCanvas, 0, 0);
+      canvas.width = hiddenCanvas.width;
+      canvas.height = hiddenCanvas.height;
+      ctx.drawImage(originalCanvas, 0, 0);
+    }
   });
 });
 
@@ -1382,6 +1394,10 @@ fileInput.addEventListener('change', (e) => {
       hiddenCanvas.width = vw;
       hiddenCanvas.height = vh;
       hCtx.drawImage(img, 0, 0, vw, vh);
+      // zapisz oryginał
+      originalCanvas.width = vw;
+      originalCanvas.height = vh;
+      oCtx.drawImage(img, 0, 0, vw, vh);
       canvas.width = vw;
       canvas.height = vh;
       ctx.drawImage(img, 0, 0, vw, vh);
