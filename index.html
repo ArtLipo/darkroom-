@@ -239,17 +239,9 @@
 
   /* LANDSCAPE MODE */
   @media (orientation: landscape) {
-    #bar-main { 
-      padding: 8px 16px; 
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 300;
-      background: var(--bg);
-      border-top: 1px solid var(--dim);
-    }
+    #bar-main { padding: 8px 16px; }
     #btn-flip { display: flex !important; }
     body { flex-direction: column; }
-    #viewfinder { margin-bottom: 68px; }
     #screen-presets, #screen-params {
       position: fixed;
       top: 36px; left: 0; right: 0;
@@ -259,6 +251,14 @@
       overflow-y: auto;
     }
     #header { position: fixed; top: 0; left: 0; right: 0; z-index: 400; }
+    #bar-main {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 300;
+      background: var(--bg);
+      border-top: 1px solid var(--dim);
+    }
+    #viewfinder { margin-bottom: 68px; margin-top: 36px; }
   }
 
   /* KOLOR SORT */
@@ -1430,11 +1430,9 @@ btnRetake.addEventListener('click', () => {
   btnPresets.style.display='flex';
   statusEl.textContent='● REC';
   hasPhoto=false;
+  isImported=false;
   showScreen(null);
-  if (isImported || !video.srcObject || video.srcObject.getTracks().every(t => t.readyState === 'ended')) {
-    isImported=false;
-    startCamera();
-  }
+  startCamera();
 });
 
 btnSave.addEventListener('click', () => {
