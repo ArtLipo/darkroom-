@@ -1430,8 +1430,11 @@ btnRetake.addEventListener('click', () => {
   btnPresets.style.display='flex';
   statusEl.textContent='● REC';
   hasPhoto=false;
-  isImported=false;
-  startCamera();
+  showScreen(null);
+  if (isImported || !video.srcObject || video.srcObject.getTracks().every(t => t.readyState === 'ended')) {
+    isImported=false;
+    startCamera();
+  }
 });
 
 btnSave.addEventListener('click', () => {
