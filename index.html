@@ -78,7 +78,18 @@
     }
     #presets-grid { background: transparent; }
     #params-body { background: transparent; }
-    .preset-tile { background: transparent; }
+    .preset-tile {
+      background: transparent;
+    }
+    .preset-tile span, .preset-tile {
+      color: var(--fg);
+      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 1px 4px rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.45);
+    }
+    .param-label, .param-value, #params-title, #presets-title, #btn-params-back, #btn-presets-back {
+      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 1px 4px rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.0);
+    }
     #bar-main {
       position: fixed;
       right: 0; top: 0; bottom: 0;
