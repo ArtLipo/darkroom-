@@ -66,25 +66,29 @@
     }
     #screen-presets.active, #screen-params.active {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0; left: 0; right: 100px; bottom: 0;
       z-index: 100;
-      background: rgba(10,10,10,0.82);
+      background: transparent;
       overflow-y: auto;
       display: flex;
     }
+    #presets-header, #params-header {
+      background: transparent;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
+    #presets-grid { background: transparent; }
+    #params-body { background: transparent; }
+    .preset-tile { background: transparent; }
     #bar-main {
       position: fixed;
-      bottom: 0; left: 0; right: 0;
+      right: 0; top: 0; bottom: 0;
+      left: auto;
       z-index: 200;
       background: var(--bg);
-      border-top: 1px solid var(--dim);
+      border-left: 1px solid var(--dim);
+      border-top: none;
       flex-direction: column;
       width: 100px;
-      height: 100dvh;
-      right: 0; left: auto;
-      top: 0; bottom: 0;
-      border-top: none;
-      border-left: 1px solid var(--dim);
       justify-content: center;
       padding: 12px 8px;
       gap: 16px;
