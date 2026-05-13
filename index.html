@@ -48,14 +48,49 @@
     min-height: 0;
   }
 
-  /* Na telefonie w pionie — ogranicz wysokość viewfindera */
+  /* TELEFON PION — obraz ~60% ekranu, interfejs pod spodem */
   @media (orientation: portrait) and (max-width: 600px) {
     #viewfinder {
       flex: none;
-      height: 55vh;
+      height: 58vh;
     }
   }
-  #video { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* TELEFON POZIOM — obraz po lewej, interfejs po prawej */
+  @media (orientation: landscape) and (max-height: 600px) {
+    body { flex-direction: row; }
+    #header { display: none; }
+    #viewfinder {
+      flex: 1;
+      height: 100dvh;
+    }
+    #screen-presets.active, #screen-params.active {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 100;
+      background: rgba(10,10,10,0.82);
+      overflow-y: auto;
+      display: flex;
+    }
+    #bar-main {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 200;
+      background: var(--bg);
+      border-top: 1px solid var(--dim);
+      flex-direction: column;
+      width: 100px;
+      height: 100dvh;
+      right: 0; left: auto;
+      top: 0; bottom: 0;
+      border-top: none;
+      border-left: 1px solid var(--dim);
+      justify-content: center;
+      padding: 12px 8px;
+      gap: 16px;
+    }
+  }
+  #video { width: 100%; height: 100%; object-fit: contain; display: block; background: #000; }
   #canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: #000; display: none; }
 
   .corner { position: absolute; width: 14px; height: 14px; border-color: var(--accent); border-style: solid; opacity: 0.8; }
@@ -249,24 +284,7 @@
     color: var(--c, var(--accent));
   }
 
-  /* LANDSCAPE */
-  @media (orientation: landscape) {
-    #screen-presets.active, #screen-params.active {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      z-index: 100;
-      background: rgba(10,10,10,0.82);
-      overflow-y: auto;
-      display: flex;
-    }
-    #bar-main {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      z-index: 200;
-      background: var(--bg);
-      border-top: 1px solid var(--dim);
-    }
-  }
+  /* LANDSCAPE handled above */
 </style>
 </head>
 <body>
