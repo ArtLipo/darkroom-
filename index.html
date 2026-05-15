@@ -1511,6 +1511,15 @@ btnSave.addEventListener('click', () => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  // feedback
+  btnSave.style.borderColor = '#00cc66';
+  btnSave.style.color = '#00cc66';
+  btnSave.innerHTML = '✓<br>SAVED';
+  setTimeout(() => {
+    btnSave.style.borderColor = '';
+    btnSave.style.color = '';
+    btnSave.innerHTML = '↓<br>SAVE';
+  }, 2000);
 });
 </script>
 </body>
