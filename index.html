@@ -1438,8 +1438,9 @@ btnShoot.addEventListener('click', () => {
         canvas.height = vh;
         ctx.drawImage(hiddenCanvas, 0, 0);
 
-        video.style.display = 'block';   // kamera nadal widoczna pod canvasem
+        video.style.display = 'block';
         canvas.style.display = 'block';
+        canvas.style.opacity = '0.6';
         document.getElementById('scanline').style.display = 'none';
 
         processing.classList.remove('active');
@@ -1485,6 +1486,7 @@ btnShoot.addEventListener('click', () => {
 // RETAKE
 btnRetake.addEventListener('click', () => {
   canvas.style.display='none';
+  canvas.style.opacity='1';
   video.style.display='block';
   document.getElementById('scanline').style.display='block';
   btnRetake.classList.remove('visible');
