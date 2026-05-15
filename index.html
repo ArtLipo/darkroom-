@@ -148,8 +148,6 @@
     padding: 12px 20px;
     flex-shrink: 0;
     gap: 10px;
-    position: relative;
-    z-index: 100;
   }
 
   #btn-flip, #btn-presets, #btn-retake, #btn-save, #btn-import {
@@ -606,7 +604,7 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
     currentPreset = name;
     applyPreset(name);
     screenPresets.classList.remove('active');
-    screenParams.classList.add('active');
+    screenParams.classList.remove('active');
     if (isImported) {
       hasPhoto = false;
       hiddenCanvas.width = originalCanvas.width;
