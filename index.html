@@ -257,8 +257,10 @@
     bottom: 92px;
     z-index: 50;
     overflow: hidden;
+    pointer-events: none;
   }
   #screen-params.active { display: flex; }
+  #params-header, #params-body { pointer-events: all; }
 
   #params-header {
     display: flex;
@@ -604,7 +606,7 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
     currentPreset = name;
     applyPreset(name);
     screenPresets.classList.remove('active');
-    screenParams.classList.remove('active');
+    screenParams.classList.add('active');
     if (isImported) {
       hasPhoto = false;
       hiddenCanvas.width = originalCanvas.width;
