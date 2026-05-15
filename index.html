@@ -63,30 +63,13 @@
       height: 100dvh;
     }
     #screen-presets.active, #screen-params.active {
-      position: fixed;
-      top: 0; left: 0; right: 100px; bottom: 0;
-      z-index: 100;
-      background: transparent;
-      overflow-y: auto;
-      display: flex;
+      top: 0;
+      right: 100px;
+      bottom: 0;
+      background: rgba(10,10,10,0.88);
     }
     #presets-header, #params-header {
-      background: transparent;
       border-bottom: 1px solid rgba(255,255,255,0.15);
-    }
-    #presets-grid { background: transparent; }
-    #params-body { background: transparent; }
-    .preset-tile {
-      background: transparent;
-    }
-    .preset-tile span, .preset-tile {
-      color: var(--fg);
-      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 1px 4px rgba(0,0,0,0.9);
-      background: rgba(0,0,0,0.45);
-    }
-    .param-label, .param-value, #params-title, #presets-title, #btn-params-back, #btn-presets-back {
-      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 1px 4px rgba(0,0,0,0.9);
-      background: rgba(0,0,0,0.0);
     }
     #bar-main {
       position: fixed;
@@ -193,8 +176,13 @@
   #screen-presets {
     display: none;
     flex-direction: column;
-    background: rgba(10,10,10,0.82);
-    flex-shrink: 0;
+    background: rgba(10,10,10,0.95);
+    position: fixed;
+    top: 47px; /* wysokość headera */
+    left: 0; right: 0;
+    bottom: 92px; /* wysokość paska migawki */
+    z-index: 50;
+    overflow: hidden;
   }
   #screen-presets.active { display: flex; }
 
@@ -204,6 +192,7 @@
     justify-content: space-between;
     padding: 8px 16px;
     border-bottom: 1px solid var(--dim);
+    flex-shrink: 0;
   }
   #presets-title { font-size: 9px; letter-spacing: 3px; color: var(--mid); }
   #btn-presets-back {
@@ -218,7 +207,8 @@
     gap: 6px;
     padding: 10px;
     overflow-y: auto;
-    max-height: 280px;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
   }
 
   .preset-tile {
@@ -242,8 +232,13 @@
   #screen-params {
     display: none;
     flex-direction: column;
-    background: rgba(10,10,10,0.82);
-    flex-shrink: 0;
+    background: rgba(10,10,10,0.95);
+    position: fixed;
+    top: 47px;
+    left: 0; right: 0;
+    bottom: 92px;
+    z-index: 50;
+    overflow: hidden;
   }
   #screen-params.active { display: flex; }
 
@@ -261,7 +256,7 @@
     letter-spacing: 1px; cursor: pointer; padding: 4px 8px;
   }
 
-  #params-body { padding: 8px 16px 10px; }
+  #params-body { padding: 8px 16px 10px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
 
   .param-row {
     display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
