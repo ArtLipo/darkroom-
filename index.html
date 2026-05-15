@@ -66,10 +66,25 @@
       top: 0;
       right: 100px;
       bottom: 0;
-      background: rgba(10,10,10,0.88);
+      background: transparent;
     }
     #presets-header, #params-header {
+      background: transparent;
       border-bottom: 1px solid rgba(255,255,255,0.15);
+    }
+    #presets-grid { background: transparent; }
+    #params-body { background: transparent; }
+    .preset-tile {
+      background: transparent;
+    }
+    .preset-tile span, .preset-tile {
+      color: var(--fg);
+      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 1px 4px rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.45);
+    }
+    .param-label, .param-value, #params-title, #presets-title, #btn-params-back, #btn-presets-back {
+      text-shadow: 0 0 6px rgba(0,0,0,0.9), 0 1px 4px rgba(0,0,0,0.9);
+      background: rgba(0,0,0,0.0);
     }
     #bar-main {
       position: fixed;
