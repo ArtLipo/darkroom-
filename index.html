@@ -381,6 +381,7 @@
     <div class="preset-tile" data-preset="elektroforeza"><span class="tile-icon">⚡</span>ELEKTRO</div>
     <div class="preset-tile" data-preset="grawitacja"><span class="tile-icon">↓</span>GRAWITACJA</div>
     <div class="preset-tile" data-preset="multiexp"><span class="tile-icon">⊕</span>MULTI EXP</div>
+    <div class="preset-tile" data-preset="pryzmat"><span class="tile-icon">⧈</span>PRYZMAT</div>
   </div>
 </div>
 
@@ -565,6 +566,7 @@ const PRESETS = {
   elektroforeza: { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'elektroforeza' },
   grawitacja:    { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'grawitacja'    },
   multiexp:      { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'multiexp'      },
+  pryzmat:       { threshold: 80, intensity: 60, dir: 'horizontal', bw: false, filter: 'pryzmat'       },
 };
 
 const EXTRA_PARAMS = {
@@ -585,11 +587,12 @@ const EXTRA_PARAMS = {
   elektroforeza: { e1: { label: 'DYSTANS', min:5, max:200, val:80 }, e2: null },
   grawitacja:    { e1: { label: 'SIŁA',    min:0, max:100, val:100}, e2: null },
   'kolor-sort':  { e1: { label: 'ZAKRES',  min:5, max:90,  val:30 }, e2: null },
+  pryzmat:       { e1: { label: 'SIATKA',  min:2, max:6,   val:3  }, e2: null },
 };
 
-const NO_THRESHOLD = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza','grawitacja','multiexp'];
-const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza','grawitacja','multiexp'];
-const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza','grawitacja','multiexp'];
+const NO_THRESHOLD = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza','grawitacja','multiexp','pryzmat'];
+const NO_INTENSITY = ['paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza','grawitacja','multiexp','pryzmat'];
+const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdoskop','kalejdoskop-kolo','shuffle','krystalizacja','osmoza','mobius','mnozenie','zespolone','topo','elektroforeza','grawitacja','multiexp','pryzmat'];
 
 // NAVIGATION
 btnPresets.addEventListener('click', () => {
@@ -1352,6 +1355,35 @@ function applyKalejdoskop(imageData, segments, rotation) {
   return imageData;
 }
 
+function applyPryzmat(imageData, grid) {
+  const w = imageData.width, h = imageData.height;
+  const src = new Uint8ClampedArray(imageData.data);
+  const d = imageData.data;
+  const tileW = Math.floor(w / grid);
+  const tileH = Math.floor(h / grid);
+
+  for (let ty = 0; ty < h; ty++) {
+    for (let tx = 0; tx < w; tx++) {
+      // który kafelek
+      const col = Math.floor(tx / tileW);
+      const row = Math.floor(ty / tileH);
+      // pozycja wewnątrz kafelka
+      let lx = tx - col * tileW;
+      let ly = ty - row * tileH;
+      // lustrzane odbicie co drugi kafelek
+      if (col % 2 === 1) lx = tileW - 1 - lx;
+      if (row % 2 === 1) ly = tileH - 1 - ly;
+      // mapuj na środkowy kafelek z oryginału
+      const sx = Math.min(w - 1, lx + Math.floor((grid - 1) / 2) * tileW % w);
+      const sy = Math.min(h - 1, ly + Math.floor((grid - 1) / 2) * tileH % h);
+      const dst = (ty * w + tx) * 4;
+      const s = (sy * w + sx) * 4;
+      d[dst] = src[s]; d[dst+1] = src[s+1]; d[dst+2] = src[s+2];
+    }
+  }
+  return imageData;
+}
+
 function animateProgress(duration, cb) {
   const start=performance.now();
   function step(now){
@@ -1387,6 +1419,7 @@ function runFilter(imageData) {
   else if(activeFilter==='topo') applyTopo(imageData, extra1, extra2);
   else if(activeFilter==='elektroforeza') applyElektroforeza(imageData, extra1, activeEdir);
   else if(activeFilter==='grawitacja') applyGrawitacja(imageData, extra1, activeGdir);
+  else if(activeFilter==='pryzmat') applyPryzmat(imageData, extra1);
   else applyPixelSort(imageData, threshold, intensity, direction);
   return imageData;
 }
