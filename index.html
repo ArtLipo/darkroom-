@@ -594,14 +594,21 @@ const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdo
 btnPresets.addEventListener('click', () => {
   screenPresets.classList.add('active');
   screenParams.classList.remove('active');
+  if (window.matchMedia('(orientation: portrait)').matches) {
+    document.getElementById('bar-main').style.visibility = 'hidden';
+  }
 });
 btnPresetsBack.addEventListener('click', () => {
   screenPresets.classList.remove('active');
   screenParams.classList.remove('active');
+  document.getElementById('bar-main').style.visibility = 'visible';
 });
 btnParamsBack.addEventListener('click', () => {
   screenParams.classList.remove('active');
   screenPresets.classList.add('active');
+  if (window.matchMedia('(orientation: portrait)').matches) {
+    document.getElementById('bar-main').style.visibility = 'hidden';
+  }
 });
 
 document.querySelectorAll('.preset-tile').forEach(tile => {
@@ -613,6 +620,7 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
     applyPreset(name);
     screenPresets.classList.remove('active');
     screenParams.classList.add('active');
+    document.getElementById('bar-main').style.visibility = 'visible';
     if (isImported) {
       hasPhoto = false;
       hiddenCanvas.width = originalCanvas.width;
