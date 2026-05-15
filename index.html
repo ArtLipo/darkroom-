@@ -309,6 +309,12 @@
   }
   .dir-btn.active { border-color: var(--accent); color: var(--accent); }
 
+  @media (orientation: portrait) {
+    #screen-presets.active ~ #bar-main {
+      display: none;
+    }
+  }
+
   #hidden-canvas { display: none; }
 
   #row-kolor-select { padding: 4px 0; }
@@ -588,21 +594,14 @@ const NO_DIR = ['drzenie','paski','sen','spirala','siatka','ekspozycja','kalejdo
 btnPresets.addEventListener('click', () => {
   screenPresets.classList.add('active');
   screenParams.classList.remove('active');
-  if (window.matchMedia('(orientation: portrait)').matches) {
-    document.getElementById('bar-main').style.display = 'none';
-  }
 });
 btnPresetsBack.addEventListener('click', () => {
   screenPresets.classList.remove('active');
   screenParams.classList.remove('active');
-  document.getElementById('bar-main').style.display = 'flex';
 });
 btnParamsBack.addEventListener('click', () => {
   screenParams.classList.remove('active');
   screenPresets.classList.add('active');
-  if (window.matchMedia('(orientation: portrait)').matches) {
-    document.getElementById('bar-main').style.display = 'none';
-  }
 });
 
 document.querySelectorAll('.preset-tile').forEach(tile => {
@@ -614,7 +613,6 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
     applyPreset(name);
     screenPresets.classList.remove('active');
     screenParams.classList.add('active');
-    document.getElementById('bar-main').style.display = 'flex';
     if (isImported) {
       hasPhoto = false;
       hiddenCanvas.width = originalCanvas.width;
