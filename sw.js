@@ -1,4 +1,4 @@
-const CACHE_NAME = 'darkroom-v2';
+const CACHE_NAME = 'darkroom-v3';
 const FILES = [
   '/darkroom-/',
   '/darkroom-/index.html',
@@ -24,6 +24,20 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    caches.match(e.request).then(cached => {
+      const fetchPromise = fetch(e.request).then(response => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+        }
+        return response;
+      }).catch(() => cached);
+      return cached || fetchPromise;
+    })
   );
+});
+
+// sprawdź aktualizacje przy każdym otwarciu
+self.addEventListener('message', e => {
+  if (e.data === 'checkUpdate') self.registration.update();
 });
