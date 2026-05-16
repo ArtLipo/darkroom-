@@ -1564,7 +1564,11 @@ btnSave.addEventListener('click', () => {
 // SERVICE WORKER
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/darkroom-/sw.js');
+    navigator.serviceWorker.register('/darkroom-/sw.js').then(reg => {
+      // sprawdź aktualizacje przy otwarciu
+      reg.update();
+      navigator.serviceWorker.controller && navigator.serviceWorker.controller.postMessage('checkUpdate');
+    });
   });
 }
 </script>
