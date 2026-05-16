@@ -1,4 +1,4 @@
-const CACHE_NAME = 'darkroom-v1';
+const CACHE_NAME = 'darkroom-v2';
 const FILES = [
   '/darkroom-/',
   '/darkroom-/index.html',
