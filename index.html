@@ -1465,6 +1465,7 @@ btnShoot.addEventListener('click', () => {
     setTimeout(() => {
       animateProgress(400, () => {
         const snapData = snapCtx.getImageData(0, 0, vw, vh);
+        applyGlobal(snapData);
         addFrameToAccum(snapData);
         expCount++;
 
