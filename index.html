@@ -11,7 +11,6 @@
 <link rel="manifest" href="manifest.json">
 <title>DARKROOM</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&display=swap');
 
   :root {
     --bg: #0a0a0a;
@@ -336,6 +335,18 @@
     border-color: var(--c, var(--accent));
     color: var(--c, var(--accent));
   }
+
+  button:disabled { opacity: .4; pointer-events: none; }
+  #btn-album { position:absolute; right:12px; top:12px; z-index:8; background:#111; color:var(--fg); border:1px solid var(--dim); padding:10px; font:12px monospace; }
+  @media (orientation: landscape) and (max-height: 600px) { #btn-album { right:112px; } }
+  #album { position:fixed; inset:0; z-index:300; background:#0a0a0a; color:var(--fg); overflow:auto; padding:16px; }
+  #album[hidden] { display:none; }
+  #album button { background:#161616; color:var(--fg); border:1px solid #555; padding:12px; margin:4px; font:12px monospace; }
+  #album-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
+  #album-list article { border:1px solid #333; padding:8px; }
+  #album-list img { width:100%; height:180px; object-fit:contain; }
+  #album p { font:12px/1.6 monospace; margin:12px 0; }
+  #app-notice { position:fixed; bottom:100px; left:10%; width:80%; padding:12px; background:#222; color:#fff; z-index:310; font:12px/1.5 monospace; pointer-events:none; }
 </style>
 </head>
 <body>
@@ -346,6 +357,7 @@
 </div>
 
 <div id="viewfinder">
+  <button id="btn-album" type="button">ALBUM</button>
   <video id="video" autoplay playsinline muted></video>
   <canvas id="canvas"></canvas>
   <div class="corner tl"></div>
@@ -358,7 +370,7 @@
     <div id="proc-bar-wrap"><div id="proc-bar"></div></div>
   </div>
   <div id="flash"></div>
-  <div id="exp-counter">1/20</div>
+  <div id="exp-counter">1/35</div>
 </div>
 
 <div id="screen-presets">
@@ -493,7 +505,7 @@
     <!-- INFO dla MULTI EXP -->
     <div id="row-multiexp-info" style="display:none; padding: 6px 0;">
       <span class="param-label" style="width:100%; color: var(--mid); font-size:8px; line-height:1.6;">
-        ROB ZDJĘCIA — KAŻDE<br>NAKŁADA SIĘ NA POPRZEDNIE.<br>MAX 20. SAVE = GOTOWE.
+        ROB ZDJĘCIA — KAŻDE<br>NAKŁADA SIĘ NA POPRZEDNIE.<br>MAX 35. SAVE = GOTOWE.
       </span>
     </div>
   </div>
@@ -508,6 +520,13 @@
   <button id="btn-save">↓<br>SAVE</button>
 </div>
 
+<section id="album" hidden aria-label="Zapisane zdjęcia">
+  <button id="album-close" type="button">WRÓĆ DO APARATU</button>
+  <p>DARKROOM · wersja 4.1<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
+  <p id="album-status" role="status"></p><div id="album-list"></div>
+</section>
+<div id="app-notice" hidden role="status"></div>
+<script src="photo-store.js"></script>
 <canvas id="hidden-canvas"></canvas>
 <input type="file" id="file-input" accept="image/*" style="display:none">
 
@@ -539,6 +558,23 @@ const MAX_EXP = 35;
 
 let direction = 'horizontal';
 let hasPhoto = false;
+let isBusy = false;
+let photoBlob = null;
+let photoId = null;
+let cameraRequest = 0;
+function setBusy(value) {
+  isBusy = value;
+  [btnShoot, btnSave, btnRetake, btnFlip, btnPresets, document.getElementById('btn-import'), document.getElementById('btn-album')].forEach(b => b.disabled = value);
+}
+async function preparePhoto() {
+  photoBlob = await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Nie udało się przygotować zdjęcia.')), 'image/jpeg', .92));
+  photoId = 'darkroom_' + Date.now() + '_' + crypto.randomUUID();
+}
+function reportError(error) {
+  console.error(error);
+  notice(error.message || 'Wystąpił błąd. Spróbuj ponownie.');
+}
+
 let isImported = false;
 let facingMode = 'environment';
 let activeFilter = 'pixelsort';
@@ -622,10 +658,12 @@ btnParamsBack.addEventListener('click', () => {
 });
 
 document.querySelectorAll('.preset-tile').forEach(tile => {
-  tile.addEventListener('click', () => {
+  tile.addEventListener('click', async () => {
+    if (isBusy) return;
     document.querySelectorAll('.preset-tile').forEach(t => t.classList.remove('selected'));
     tile.classList.add('selected');
     const name = tile.dataset.preset;
+    const previousFilter = activeFilter;
     currentPreset = name;
     applyPreset(name);
     screenPresets.classList.remove('active');
@@ -641,8 +679,14 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
       ctx.drawImage(originalCanvas, 0, 0);
     }
     // reset multi exp przy zmianie presetu
-    if (name === 'multiexp') {
+    if (name === 'multiexp' || previousFilter === 'multiexp') {
       resetMultiExp();
+      if (!isImported) returnToCamera();
+    }
+    if (isImported) {
+      setBusy(true);
+      try { await preparePhoto(); } catch (error) { photoBlob = null; reportError(error); }
+      finally { setBusy(false); }
     }
   });
 });
@@ -743,20 +787,32 @@ bindSlider('sl-extra1', 'val-extra1');
 bindSlider('sl-extra2', 'val-extra2');
 
 async function startCamera() {
+  const request = ++cameraRequest;
   if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+  video.srcObject = null;
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false
-    });
-    video.srcObject = stream;
-  } catch(e) {
+    let stream;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-      video.srcObject = stream;
-    } catch(e2) { console.log('Brak kamery'); }
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+    } catch (error) {
+      if (error.name === 'NotAllowedError') throw error;
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
+    if (request !== cameraRequest || isImported) { stream.getTracks().forEach(t => t.stop()); return; }
+    video.srcObject = stream;
+    await video.play();
+  } catch (error) {
+    if (request === cameraRequest) notice('Nie można uruchomić aparatu. Sprawdź uprawnienia lub użyj IMPORT.');
   }
 }
 startCamera();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !isImported && !isBusy) {
+    const track = video.srcObject?.getVideoTracks()[0];
+    if (!track || track.readyState === 'ended') startCamera();
+    else video.play().catch(() => startCamera());
+  }
+});
 
 btnFlip.addEventListener('click', () => {
   if (hasPhoto) return;
@@ -769,39 +825,34 @@ document.getElementById('btn-import').addEventListener('click', () => {
   document.getElementById('file-input').click();
 });
 
-document.getElementById('file-input').addEventListener('change', (e) => {
+document.getElementById('file-input').addEventListener('change', async (e) => {
   const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const img = new Image();
-    img.onload = () => {
-      const vw = img.width, vh = img.height;
-      originalCanvas.width = vw;
-      originalCanvas.height = vh;
-      oCtx.drawImage(img, 0, 0, vw, vh);
-      hiddenCanvas.width = vw;
-      hiddenCanvas.height = vh;
-      hCtx.drawImage(img, 0, 0, vw, vh);
-      canvas.width = vw;
-      canvas.height = vh;
-      ctx.drawImage(img, 0, 0, vw, vh);
-      if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
-      video.style.display = 'none';
-      canvas.style.display = 'block';
-      document.getElementById('scanline').style.display = 'none';
-      btnRetake.classList.add('visible');
-      btnSave.classList.add('visible');
-      btnFlip.style.display = 'none';
-      btnPresets.style.display = 'flex';
-      statusEl.textContent = '● IMPORTED';
-      hasPhoto = false;
-      isImported = true;
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
   e.target.value = '';
+  if (!file || isBusy) return;
+  setBusy(true);
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    resetMultiExp();
+    for (const target of [originalCanvas, hiddenCanvas, canvas]) {
+      target.width = img.naturalWidth; target.height = img.naturalHeight;
+      target.getContext('2d').drawImage(img, 0, 0);
+    }
+    cameraRequest++;
+    if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+    isImported = true;
+    hasPhoto = false;
+    video.style.display = 'none';
+    canvas.style.display = 'block'; canvas.style.opacity = '1';
+    document.getElementById('scanline').style.display = 'none';
+    btnRetake.classList.add('visible'); btnSave.classList.add('visible');
+    btnFlip.style.display = 'none';
+    statusEl.textContent = '● IMPORTED';
+    await preparePhoto();
+  } catch (error) { photoBlob = null; reportError(error); }
+  finally { URL.revokeObjectURL(url); setBusy(false); }
 });
 
 // =====================
@@ -1431,144 +1482,78 @@ function runFilter(imageData) {
 }
 
 // SHOOT
-btnShoot.addEventListener('click', () => {
-  if (hasPhoto) return;
-  if (activeFilter === 'multiexp' && expCount >= MAX_EXP) return;
-
-  flash.classList.add('on');
-  setTimeout(() => flash.classList.remove('on'), 150);
-
-  let vw, vh;
-  if (isImported) {
-    vw = hiddenCanvas.width;
-    vh = hiddenCanvas.height;
-  } else {
-    vw = video.videoWidth || 640;
-    vh = video.videoHeight || 480;
-    hiddenCanvas.width = vw;
-    hiddenCanvas.height = vh;
-    hCtx.drawImage(video, 0, 0, vw, vh);
-  }
-
-  processing.classList.add('active');
-  procBar.style.width='0%';
-  statusEl.textContent='● PROCESSING';
-
-  if (activeFilter === 'multiexp') {
-    // MULTI EXP — pobierz klatkę z kamery, dodaj do akumulatora
-    const snapCanvas = document.createElement('canvas');
-    snapCanvas.width = vw;
-    snapCanvas.height = vh;
-    const snapCtx = snapCanvas.getContext('2d');
-    snapCtx.drawImage(video, 0, 0, vw, vh);
-
-    setTimeout(() => {
-      animateProgress(400, () => {
-        const snapData = snapCtx.getImageData(0, 0, vw, vh);
-        applyGlobal(snapData);
-        addFrameToAccum(snapData);
-        expCount++;
-
-        // zbuduj bieżący blend i pokaż
-        const blended = buildBlendedImageData();
-        hiddenCanvas.width = vw;
-        hiddenCanvas.height = vh;
-        hCtx.putImageData(blended, 0, 0);
-        canvas.width = vw;
-        canvas.height = vh;
-        ctx.drawImage(hiddenCanvas, 0, 0);
-
-        video.style.display = 'block';
-        canvas.style.display = 'block';
-        canvas.style.opacity = '0.6';
-        document.getElementById('scanline').style.display = 'none';
-
-        processing.classList.remove('active');
-        updateExpCounter();
-
-        // pokaż przyciski save/retake od pierwszego zdjęcia
-        btnRetake.classList.add('visible');
-        btnSave.classList.add('visible');
-        btnFlip.style.display = 'none';
-
-        // zamknij suwaki
-        screenPresets.classList.remove('active');
-        screenParams.classList.remove('active');
-      });
-    }, 50);
-
-  } else {
-    // NORMALNY tryb
-    setTimeout(() => {
-      let imageData = hCtx.getImageData(0, 0, vw, vh);
-      animateProgress(800, () => {
-        runFilter(imageData);
-        hCtx.putImageData(imageData, 0, 0);
-        canvas.width=vw; canvas.height=vh;
-        ctx.drawImage(hiddenCanvas, 0, 0);
-        video.style.display='none';
-        canvas.style.display='block';
-        document.getElementById('scanline').style.display='none';
-        processing.classList.remove('active');
-        statusEl.textContent='● READY';
-        btnRetake.classList.add('visible');
-        btnSave.classList.add('visible');
-        btnFlip.style.display='none';
-        btnPresets.style.display='flex';
-        hasPhoto=true;
-        screenPresets.classList.remove('active');
-        screenParams.classList.remove('active');
-      });
-    }, 50);
-  }
+btnShoot.addEventListener('click', async () => {
+  if (isBusy || hasPhoto || (activeFilter === 'multiexp' && expCount >= MAX_EXP)) return;
+  if (!isImported && (video.readyState < 2 || !video.videoWidth)) { notice('Aparat jeszcze nie jest gotowy. Spróbuj za chwilę.'); return; }
+  setBusy(true);
+  processing.classList.add('active'); procBar.style.width = '0%';
+  statusEl.textContent = '● PROCESSING';
+  flash.classList.add('on'); setTimeout(() => flash.classList.remove('on'), 150);
+  try {
+    const multi = activeFilter === 'multiexp';
+    const source = isImported ? originalCanvas : video;
+    const vw = multi && expCount ? expWidth : (isImported ? originalCanvas.width : video.videoWidth);
+    const vh = multi && expCount ? expHeight : (isImported ? originalCanvas.height : video.videoHeight);
+    const snap = document.createElement('canvas'); snap.width = vw; snap.height = vh;
+    const snapCtx = snap.getContext('2d');
+    snapCtx.drawImage(source, 0, 0, vw, vh);
+    await new Promise(resolve => animateProgress(multi ? 400 : 800, resolve));
+    let imageData = snapCtx.getImageData(0, 0, vw, vh);
+    if (multi) {
+      applyGlobal(imageData); addFrameToAccum(imageData); expCount++;
+      imageData = buildBlendedImageData();
+    } else { runFilter(imageData); }
+    hiddenCanvas.width = canvas.width = vw; hiddenCanvas.height = canvas.height = vh;
+    hCtx.putImageData(imageData, 0, 0); ctx.putImageData(imageData, 0, 0);
+    canvas.style.display = 'block'; canvas.style.opacity = multi && !isImported ? '.6' : '1';
+    video.style.display = multi && !isImported ? 'block' : 'none';
+    document.getElementById('scanline').style.display = 'none';
+    hasPhoto = !multi;
+    if (multi) updateExpCounter(); else statusEl.textContent = '● READY';
+    btnRetake.classList.add('visible'); btnSave.classList.add('visible'); btnFlip.style.display = 'none';
+    screenPresets.classList.remove('active'); screenParams.classList.remove('active');
+    document.getElementById('bar-main').style.visibility = 'visible';
+    await preparePhoto();
+  } catch (error) { photoBlob = null; statusEl.textContent = '● BŁĄD'; reportError(error); }
+  finally { processing.classList.remove('active'); setBusy(false); }
 });
 
-// RETAKE
-btnRetake.addEventListener('click', () => {
-  canvas.style.display='none';
-  canvas.style.opacity='1';
-  video.style.display='block';
-  document.getElementById('scanline').style.display='block';
-  btnRetake.classList.remove('visible');
-  btnSave.classList.remove('visible');
-  btnFlip.style.display='flex';
-  btnPresets.style.display='flex';
-  statusEl.textContent='● REC';
-  hasPhoto=false;
-  isImported=false;
-  screenPresets.classList.remove('active');
-  screenParams.classList.remove('active');
-  // reset multi exp
+function returnToCamera() {
+  canvas.style.display = 'none'; canvas.style.opacity = '1'; video.style.display = 'block';
+  document.getElementById('scanline').style.display = 'block';
+  btnRetake.classList.remove('visible'); btnSave.classList.remove('visible');
+  btnFlip.style.display = 'flex'; btnPresets.style.display = 'flex';
+  statusEl.textContent = '● REC';
+  hasPhoto = false; isImported = false; photoBlob = null; photoId = null;
+  screenPresets.classList.remove('active'); screenParams.classList.remove('active');
+  document.getElementById('bar-main').style.visibility = 'visible';
   resetMultiExp();
-  startCamera();
+  const track = video.srcObject?.getVideoTracks()[0];
+  if (!track || track.readyState === 'ended') startCamera();
+  else video.play().catch(() => startCamera());
+}
+btnRetake.addEventListener('click', () => { if (!isBusy) returnToCamera(); });
+
+btnSave.addEventListener('click', async () => {
+  if (isBusy) return;
+  setBusy(true);
+  try {
+    if (!photoBlob) await preparePhoto();
+    const photo = { id: photoId, name: photoId + '.jpg', created: Date.now(), blob: photoBlob };
+    await PhotoStore.put(photo);
+    returnToCamera();
+    notice('Zapisano w ALBUMIE. Możesz zrobić następne zdjęcie.');
+  } catch (error) {
+    reportError(new Error('Nie udało się zapisać w albumie. Zdjęcie pozostało na ekranie. Sprawdź wolne miejsce i spróbuj ponownie.'));
+  } finally { setBusy(false); }
 });
 
-// SAVE
-btnSave.addEventListener('click', () => {
-  const link=document.createElement('a');
-  link.download='darkroom_'+Date.now()+'.jpg';
-  link.href=hiddenCanvas.toDataURL('image/jpeg', 0.92);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  // feedback
-  btnSave.style.borderColor = '#00cc66';
-  btnSave.style.color = '#00cc66';
-  btnSave.innerHTML = '✓<br>SAVED';
-  setTimeout(() => {
-    btnSave.style.borderColor = '';
-    btnSave.style.color = '';
-    btnSave.innerHTML = '↓<br>SAVE';
-  }, 2000);
-});
-// SERVICE WORKER
+// Updates activate on the next full app launch, without reloading a photo session.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/darkroom-/sw.js').then(reg => {
-      // sprawdź aktualizacje przy otwarciu
-      reg.update();
-      navigator.serviceWorker.controller && navigator.serviceWorker.controller.postMessage('checkUpdate');
-    });
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+      .then(reg => reg.update().catch(() => {}))
+      .catch(error => console.warn('Offline setup unavailable:', error));
   });
 }
 </script>
