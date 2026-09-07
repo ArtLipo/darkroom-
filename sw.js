@@ -1,4 +1,4 @@
-const CACHE_NAME = 'darkroom-v4.1';
+const CACHE_NAME = 'darkroom-v4.2';
 const BASE = new URL('./', self.location.href);
 const FILES = ['./', 'index.html', 'photo-store.js', 'manifest.json', 'icon-192.png', 'icon-512_1.png'];
 const ASSETS = FILES.map(path => new URL(path, BASE).href);

@@ -337,7 +337,7 @@
   }
 
   button:disabled { opacity: .4; pointer-events: none; }
-  #btn-album { position:absolute; right:12px; top:12px; z-index:8; background:#111; color:var(--fg); border:1px solid var(--dim); padding:10px; font:12px monospace; }
+  #btn-album { position:absolute; right:12px; bottom:12px; z-index:8; background:transparent; color:var(--fg); border:1px solid #ffffff55; text-shadow:0 1px 3px #000,0 0 4px #000; padding:10px; font:12px monospace; }
   @media (orientation: landscape) and (max-height: 600px) { #btn-album { right:112px; } }
   #album { position:fixed; inset:0; z-index:300; background:#0a0a0a; color:var(--fg); overflow:auto; padding:16px; }
   #album[hidden] { display:none; }
@@ -522,7 +522,7 @@
 
 <section id="album" hidden aria-label="Zapisane zdjęcia">
   <button id="album-close" type="button">WRÓĆ DO APARATU</button>
-  <p>DARKROOM · wersja 4.1<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
+  <p>DARKROOM · wersja 4.2<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
   <p id="album-status" role="status"></p><div id="album-list"></div>
 </section>
 <div id="app-notice" hidden role="status"></div>
@@ -535,7 +535,7 @@ const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const hiddenCanvas = document.getElementById('hidden-canvas');
-const hCtx = hiddenCanvas.getContext('2d');
+const hCtx = hiddenCanvas.getContext('2d', { willReadFrequently: true });
 const originalCanvas = document.createElement('canvas');
 const oCtx = originalCanvas.getContext('2d');
 const btnShoot = document.getElementById('btn-shoot');
@@ -567,7 +567,13 @@ function setBusy(value) {
   [btnShoot, btnSave, btnRetake, btnFlip, btnPresets, document.getElementById('btn-import'), document.getElementById('btn-album')].forEach(b => b.disabled = value);
 }
 async function preparePhoto() {
-  photoBlob = await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Nie udało się przygotować zdjęcia.')), 'image/jpeg', .92));
+  if (typeof OffscreenCanvas !== 'undefined' && OffscreenCanvas.prototype.convertToBlob) {
+    const encoder = new OffscreenCanvas(canvas.width, canvas.height);
+    encoder.getContext('2d').drawImage(canvas, 0, 0);
+    photoBlob = await encoder.convertToBlob({ type: 'image/jpeg', quality: .92 });
+  } else {
+    photoBlob = await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Nie udało się przygotować zdjęcia.')), 'image/jpeg', .92));
+  }
   photoId = 'darkroom_' + Date.now() + '_' + crypto.randomUUID();
 }
 function reportError(error) {
@@ -694,6 +700,7 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
 function applyPreset(name) {
   const p = PRESETS[name];
   if (!p) return;
+  currentPreset = name;
   activeFilter = p.filter;
   bw = p.bw;
   direction = p.dir;
@@ -735,6 +742,7 @@ function applyPreset(name) {
   document.getElementById('row-elektro-select').style.display = activeFilter === 'elektroforeza' ? 'block' : 'none';
   document.getElementById('row-grav-select').style.display = activeFilter === 'grawitacja' ? 'block' : 'none';
   document.getElementById('row-multiexp-info').style.display = activeFilter === 'multiexp' ? 'block' : 'none';
+  restoreFilterSettings(name);
 }
 
 let activeHue = 0;
@@ -1441,17 +1449,6 @@ function applyPryzmat(imageData, grid) {
   return imageData;
 }
 
-function animateProgress(duration, cb) {
-  const start=performance.now();
-  function step(now){
-    const pct=Math.min(100,((now-start)/duration)*100);
-    procBar.style.width=pct+'%';
-    if(pct<100)requestAnimationFrame(step);
-    else cb();
-  }
-  requestAnimationFrame(step);
-}
-
 function runFilter(imageData) {
   const threshold=parseInt(document.getElementById('sl-threshold').value);
   const intensity=parseInt(document.getElementById('sl-intensity').value);
@@ -1495,9 +1492,11 @@ btnShoot.addEventListener('click', async () => {
     const vw = multi && expCount ? expWidth : (isImported ? originalCanvas.width : video.videoWidth);
     const vh = multi && expCount ? expHeight : (isImported ? originalCanvas.height : video.videoHeight);
     const snap = document.createElement('canvas'); snap.width = vw; snap.height = vh;
-    const snapCtx = snap.getContext('2d');
+    const snapCtx = snap.getContext('2d', { willReadFrequently: true });
     snapCtx.drawImage(source, 0, 0, vw, vh);
-    await new Promise(resolve => animateProgress(multi ? 400 : 800, resolve));
+    // Let the busy indicator paint; no artificial 400/800 ms delay.
+    await new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    procBar.style.width = '35%';
     let imageData = snapCtx.getImageData(0, 0, vw, vh);
     if (multi) {
       applyGlobal(imageData); addFrameToAccum(imageData); expCount++;
@@ -1511,7 +1510,7 @@ btnShoot.addEventListener('click', async () => {
     hasPhoto = !multi;
     if (multi) updateExpCounter(); else statusEl.textContent = '● READY';
     btnRetake.classList.add('visible'); btnSave.classList.add('visible'); btnFlip.style.display = 'none';
-    screenPresets.classList.remove('active'); screenParams.classList.remove('active');
+    screenPresets.classList.remove('active');
     document.getElementById('bar-main').style.visibility = 'visible';
     await preparePhoto();
   } catch (error) { photoBlob = null; statusEl.textContent = '● BŁĄD'; reportError(error); }
@@ -1525,7 +1524,7 @@ function returnToCamera() {
   btnFlip.style.display = 'flex'; btnPresets.style.display = 'flex';
   statusEl.textContent = '● REC';
   hasPhoto = false; isImported = false; photoBlob = null; photoId = null;
-  screenPresets.classList.remove('active'); screenParams.classList.remove('active');
+  screenPresets.classList.remove('active');
   document.getElementById('bar-main').style.visibility = 'visible';
   resetMultiExp();
   const track = video.srcObject?.getVideoTracks()[0];
@@ -1547,6 +1546,52 @@ btnSave.addEventListener('click', async () => {
     reportError(new Error('Nie udało się zapisać w albumie. Zdjęcie pozostało na ekranie. Sprawdź wolne miejsce i spróbuj ponownie.'));
   } finally { setBusy(false); }
 });
+
+
+// Remember independent settings for each preset, including after restarting offline.
+const SETTINGS_KEY = 'darkroom-settings-v1';
+let savedSettings = {};
+try {
+  const loaded = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+  if (loaded && typeof loaded === 'object' && !Array.isArray(loaded)) savedSettings = loaded;
+} catch (error) { console.warn('Settings unavailable', error); }
+function rememberSettings() {
+  const sliders = {};
+  document.querySelectorAll('input[type="range"]').forEach(sl => { sliders[sl.id] = sl.value; });
+  savedSettings[currentPreset] = { sliders, bw, direction, activeHue, activeMult, activeZmode, activeEdir, activeGdir };
+  savedSettings.lastPreset = currentPreset;
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(savedSettings)); } catch (error) { console.warn('Cannot save settings', error); }
+}
+function restoreFilterSettings(name) {
+  const state = savedSettings[name];
+  if (!state || typeof state !== 'object') return;
+  for (const [id, value] of Object.entries(state.sliders || {})) {
+    const sl = document.getElementById(id);
+    if (!sl || sl.type !== 'range' || !Number.isFinite(Number(value))) continue;
+    sl.value = String(Math.max(Number(sl.min), Math.min(Number(sl.max), Number(value))));
+    const label = document.getElementById(id.replace('sl-', 'val-'));
+    if (label) label.textContent = sl.value;
+  }
+  if (typeof state.bw === 'boolean') bw = state.bw;
+  if (['horizontal','vertical','both'].includes(state.direction)) direction = state.direction;
+  if (Number.isFinite(state.activeHue)) activeHue = state.activeHue;
+  if (['rg','rb','gb','cross','power'].includes(state.activeMult)) activeMult = state.activeMult;
+  if (['pow','inv','exp'].includes(state.activeZmode)) activeZmode = state.activeZmode;
+  if (['right','left','up','down'].includes(state.activeEdir)) activeEdir = state.activeEdir;
+  if (['right','left','up','down'].includes(state.activeGdir)) activeGdir = state.activeGdir;
+  document.querySelectorAll('.bw-btn').forEach(b => b.classList.toggle('active', b.dataset.bw === String(bw)));
+  document.querySelectorAll('.dir-btn').forEach(b => b.classList.toggle('active', b.dataset.dir === direction));
+  for (const [key, value] of Object.entries({hue:activeHue,mult:activeMult,zmode:activeZmode,edir:activeEdir,gdir:activeGdir})) {
+    document.querySelectorAll('[data-' + key + ']').forEach(b => b.classList.toggle('active', b.dataset[key] === String(value)));
+  }
+  document.getElementById('row-saturation').style.display = bw ? 'none' : 'flex';
+}
+document.addEventListener('input', event => { if (event.target.matches('input[type="range"]')) rememberSettings(); });
+document.addEventListener('click', event => { if (event.target.closest('.bw-btn, .dir-btn, .kolor-btn, .preset-tile')) rememberSettings(); });
+if (Object.hasOwn(PRESETS, savedSettings.lastPreset)) {
+  applyPreset(savedSettings.lastPreset);
+  document.querySelectorAll('.preset-tile').forEach(tile => tile.classList.toggle('selected', tile.dataset.preset === currentPreset));
+}
 
 // Updates activate on the next full app launch, without reloading a photo session.
 if ('serviceWorker' in navigator) {
