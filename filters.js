@@ -251,42 +251,46 @@ function applyKolorSort(imageData, hue, range, threshold, intensity, dir) {
 }
 
 function applyGrawitacja(imageData, strength, dir) {
-  const w=imageData.width, h=imageData.height;
-  const src=new Uint8ClampedArray(imageData.data), d=imageData.data;
-  const s = strength/100;
-  if(dir==='down'||dir==='up'){
-    const reverse = dir==='down';
-    for(let x=0;x<w;x++){
-      const col=[], lums=[];
-      for(let y=0;y<h;y++){
-        const idx=(y*w+x)*4;
-        col.push([src[idx],src[idx+1],src[idx+2]]);
-        lums.push(0.299*src[idx]+0.587*src[idx+1]+0.114*src[idx+2]);
-      }
-      const idx_sorted = lums.map((_,i)=>i).sort((a,b)=> reverse ? lums[a]-lums[b] : lums[b]-lums[a]);
-      for(let y=0;y<h;y++){
-        const orig_y = Math.round(y*(1-s) + idx_sorted[y]*s);
-        const src_y = Math.max(0,Math.min(h-1,orig_y));
-        const dst=(y*w+x)*4;
-        d[dst]=col[src_y][0];d[dst+1]=col[src_y][1];d[dst+2]=col[src_y][2];
-      }
+  if (strength === 0) return imageData;
+  const {width:w, height:h, data:d} = imageData;
+  const vertical = dir === 'down' || dir === 'up';
+  const ascending = dir === 'down' || dir === 'right';
+  const length = vertical ? h : w, lines = vertical ? w : h;
+  const stride = vertical ? w * 4 : 4, mix = strength / 100;
+  // Reuse one line of storage instead of allocating an RGB array per pixel.
+  // Float64 preserves the original luminance calculation, including ties.
+  const pixels = new Uint8ClampedArray(length * 3);
+  const luminance = new Float64Array(length);
+  let order = new Uint32Array(length), scratch = new Uint32Array(length);
+  for (let line = 0; line < lines; line++) {
+    const base = vertical ? line * 4 : line * w * 4;
+    for (let i = 0; i < length; i++) {
+      const source = base + i * stride, p = i * 3;
+      const r=d[source], g=d[source+1], b=d[source+2];
+      pixels[p]=r; pixels[p+1]=g; pixels[p+2]=b;
+      luminance[i]=0.299*r+0.587*g+0.114*b;
+      order[i]=i;
     }
-  } else {
-    const reverse = dir==='right';
-    for(let y=0;y<h;y++){
-      const row=[], lums=[];
-      for(let x=0;x<w;x++){
-        const idx=(y*w+x)*4;
-        row.push([src[idx],src[idx+1],src[idx+2]]);
-        lums.push(0.299*src[idx]+0.587*src[idx+1]+0.114*src[idx+2]);
+    // Stable merge sort: equal luminance keeps the original pixel order.
+    for (let span=1; span<length; span*=2) {
+      for (let begin=0; begin<length; begin+=span*2) {
+        const middle=Math.min(begin+span,length), end=Math.min(begin+span*2,length);
+        let a=begin, b=middle, out=begin;
+        while(a<middle && b<end) {
+          const left=order[a], right=order[b];
+          if(ascending ? luminance[left]<=luminance[right] : luminance[left]>=luminance[right]) {
+            scratch[out++]=left; a++;
+          } else { scratch[out++]=right; b++; }
+        }
+        while(a<middle) scratch[out++]=order[a++];
+        while(b<end) scratch[out++]=order[b++];
       }
-      const idx_sorted = lums.map((_,i)=>i).sort((a,b)=> reverse ? lums[a]-lums[b] : lums[b]-lums[a]);
-      for(let x=0;x<w;x++){
-        const orig_x = Math.round(x*(1-s) + idx_sorted[x]*s);
-        const src_x = Math.max(0,Math.min(w-1,orig_x));
-        const dst=(y*w+x)*4;
-        d[dst]=row[src_x][0];d[dst+1]=row[src_x][1];d[dst+2]=row[src_x][2];
-      }
+      const swap=order; order=scratch; scratch=swap;
+    }
+    for(let i=0;i<length;i++) {
+      const source=Math.max(0,Math.min(length-1,Math.round(i*(1-mix)+order[i]*mix)))*3;
+      const target=base+i*stride;
+      d[target]=pixels[source]; d[target+1]=pixels[source+1]; d[target+2]=pixels[source+2];
     }
   }
   return imageData;
