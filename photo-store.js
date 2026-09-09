@@ -91,7 +91,7 @@ async function showAlbum(reset = true) {
     document.getElementById('album-prev').disabled = albumPage === 0;
     document.getElementById('album-next').disabled = !next;
     document.getElementById('album-page').textContent = 'Strona ' + (albumPage + 1);
-    status.textContent = total ? 'Zapisane zdjęcia: ' + total : 'Album jest pusty. Zrób zdjęcie i naciśnij SAVE.';
+    status.textContent = total ? 'Zapisane zdjęcia: ' + total : 'Album jest pusty. Zrób zdjęcie i naciśnij ZAPISZ W ALBUMIE.';
     updateStorageStatus();
     for (const photo of photos) {
       const item = document.createElement('article');
@@ -103,7 +103,16 @@ async function showAlbum(reset = true) {
       }
       img.src = URL.createObjectURL(thumbnail); albumUrls.push(img.src);
       img.alt = 'Zdjęcie ' + new Date(photo.created).toLocaleString('pl-PL');
-      img.loading = 'lazy'; item.appendChild(img);
+      img.loading = 'lazy';
+      const preview = document.createElement('button'); preview.className = 'photo-preview';
+      preview.setAttribute('aria-label', 'Otwórz: ' + img.alt); preview.appendChild(img);
+      preview.onclick = () => {
+        const viewer = document.getElementById('photo-viewer');
+        const full = viewer.querySelector('img'); full.src = URL.createObjectURL(photo.blob); full.alt = img.alt;
+        viewer.onclose = () => { URL.revokeObjectURL(full.src); full.removeAttribute('src'); preview.focus(); };
+        viewer.showModal(); document.getElementById('photo-viewer-close').focus();
+      };
+      item.appendChild(preview);
       const exportStatus = document.createElement('p');
       exportStatus.className = 'photo-export-status';
       exportStatus.setAttribute('role', 'status');
@@ -122,7 +131,7 @@ async function showAlbum(reset = true) {
       };
       // A real, persistent link receives the user's click directly. Do not
       // synthesize a click on a temporary link or navigate the album away.
-      const download = document.createElement('a'); download.textContent = 'POBIERZ';
+      const download = document.createElement('a'); download.textContent = 'POBIERZ NA TELEFON';
       download.className = 'photo-download';
       download.href = URL.createObjectURL(photo.blob); albumUrls.push(download.href);
       download.download = photo.name;
@@ -160,6 +169,7 @@ async function showAlbum(reset = true) {
   } catch (error) { if (request === albumRequest) status.textContent = 'Nie można otworzyć albumu. Sprawdź dostęp do pamięci przeglądarki.'; }
 }
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('photo-viewer-close').onclick = () => document.getElementById('photo-viewer').close();
   document.getElementById('album-prev').onclick = () => { if (albumPage > 0) { albumPage--; showAlbum(false); } };
   document.getElementById('album-next').onclick = () => { if (albumNext) { albumCursors[++albumPage] = albumNext; showAlbum(false); } };
   document.getElementById('storage-persist').onclick = async () => {

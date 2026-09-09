@@ -356,17 +356,72 @@
   #emergency-export p { font:14px/1.6 monospace; }
   #album nav { display:flex; align-items:center; justify-content:space-between; }
   button:focus-visible, a:focus-visible, .preset-tile:focus-visible, input[type=range]:focus-visible { outline:2px solid #ff8a55; outline-offset:3px; }
+
+/* Interfejs 4.5: kadr i ustawienia zajmują osobne obszary. */
+:root { --mid:#c4c4c4; --dim:#505050; --accent:#ff642e; }
+body { display:grid; grid-template-rows:auto minmax(100px,1fr) auto auto; font-family:Arial,sans-serif; }
+#header { grid-row:1; padding:8px 14px; }
+#title { font-size:22px; } #status { font:12px Arial,sans-serif; letter-spacing:0; animation:none; }
+#viewfinder { grid-row:2; height:auto; min-height:100px; width:100%; }
+#screen-params { grid-row:3; position:static; pointer-events:auto; max-height:34dvh; background:#181818; border-top:1px solid #505050; }
+#params-header { background:#181818; padding:4px 12px; flex-shrink:0; }
+#params-title { font: bold 14px Arial,sans-serif; letter-spacing:0; }
+#btn-params-back,#btn-presets-back { min-height:44px; font:14px Arial,sans-serif; color:#fff; }
+#params-body { background:#181818; padding:10px 12px; min-height:0; }
+.param-label { width:90px; font:12px Arial,sans-serif; letter-spacing:0; color:#ddd; }
+.param-value { font:14px Arial,sans-serif; width:34px; }
+.param-row,#bw-row,#dir-row { min-height:44px; margin-bottom:6px; }
+input[type=range] { min-width:0; height:32px; background:transparent; }
+input[type=range]::-webkit-slider-runnable-track { height:6px; background:#686868; border-radius:4px; }
+input[type=range]::-webkit-slider-thumb { width:26px; height:26px; margin-top:-10px; border-radius:50%; background:var(--accent); }
+.bw-btn,.dir-btn,.kolor-btn { min-height:44px; font:12px Arial,sans-serif; letter-spacing:0; padding:6px; }
+#bar-main { grid-row:4; position:static; width:auto; display:grid!important; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; padding:8px max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left)); background:#111; border-top:1px solid #505050; }
+#bar-main button { position:static; width:100%; height:48px; min-width:0; font:12px Arial,sans-serif; letter-spacing:0; color:#eee; border:1px solid #666; border-radius:8px; background:#202020; text-shadow:none; padding:4px; }
+#bar-main #btn-shoot { grid-column:1; grid-row:1 / span 2; height:100%; min-height:96px; background:#ff642e; color:#080808; font-weight:bold; }
+#btn-shoot::after { display:none; }
+#bar-main #btn-save { border-color:#ff642e; color:#ffba94; font-weight:bold; }
+#screen-presets { position:fixed; inset:0; background:#111; z-index:250; }
+#presets-header { background:#111; padding:8px 12px; }
+#presets-title { font: bold 16px Arial,sans-serif; color:#fff; letter-spacing:0; }
+#presets-grid { background:#111; grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); }
+.preset-tile,.preset-tile span { background:#202020; text-shadow:none; }
+.preset-tile { font:13px Arial,sans-serif; letter-spacing:0; min-height:80px; justify-content:center; border-radius:8px; }
+#proc-label { font:16px Arial,sans-serif; letter-spacing:0; animation:none; }
+#album { padding:12px; } #album button,#album .photo-download { font:14px Arial,sans-serif; min-height:44px; border-radius:6px; }
+#album p { font:14px/1.5 Arial,sans-serif; } #album nav { flex-wrap:wrap; }
+#album .photo-preview { display:block; width:100%; border:0; margin:0; padding:0; background:#000; }
+#album .photo-preview img { display:block; }
+#photo-viewer { position:fixed; inset:0; width:100%; height:100dvh; max-width:none; max-height:none; border:0; padding:12px; background:#080808; color:white; }
+#photo-viewer[open] { display:flex; flex-direction:column; gap:10px; }
+#photo-viewer img { flex:1; min-height:0; width:100%; object-fit:contain; }
+#photo-viewer button { align-self:flex-start; min-height:44px; padding:10px 16px; background:#252525; color:#fff; border:1px solid #888; font:14px Arial,sans-serif; }
+#app-notice { bottom:16px; left:5%; width:90%; font:14px/1.5 Arial,sans-serif; }
+@media (orientation:landscape) {
+ body { grid-template-rows:minmax(0,1fr); grid-template-columns:minmax(100px,1fr) auto 160px; }
+ #header { display:none; } #viewfinder { grid-row:1; grid-column:1; height:100dvh; }
+ #screen-params.active { grid-row:1; grid-column:2; width:300px; max-width:38vw; max-height:100dvh; background:#181818; }
+ #bar-main { grid-row:1; grid-column:3; width:160px; grid-template-columns:repeat(2,minmax(0,1fr)); align-content:center; }
+ #bar-main #btn-shoot { grid-row:auto; grid-column:1 / -1; min-height:52px; height:52px; }
+ #screen-presets.active { inset:0; background:#111; }
+}
+@media (max-height:650px) and (orientation:portrait) { #screen-params { max-height:29dvh; } #header { padding:4px 10px; } }
+
+
+#scanline { display:none!important; }
+#app-notice { top:max(12px,env(safe-area-inset-top)); bottom:auto; }
+#params-title,.param-label,.param-value { text-shadow:none; }
+#params-title { min-width:0; overflow-wrap:anywhere; }
+#btn-params-back { flex-shrink:0; }
 </style>
 </head>
 <body>
 
 <div id="header">
   <div id="title">DARKROOM</div>
-  <div id="status">● REC</div>
+  <div id="status">● APARAT</div>
 </div>
 
 <div id="viewfinder">
-  <button id="btn-album" type="button">ALBUM</button>
   <video id="video" autoplay playsinline muted></video>
   <canvas id="canvas"></canvas>
   <div class="corner tl"></div>
@@ -375,7 +430,7 @@
   <div class="corner br"></div>
   <div id="scanline"></div>
   <div id="processing">
-    <div id="proc-label">PROCESSING</div>
+    <div id="proc-label">Przetwarzanie…</div>
     <div id="proc-bar-wrap"><div id="proc-bar"></div></div>
   </div>
   <div id="flash"></div>
@@ -384,11 +439,11 @@
 
 <div id="screen-presets">
   <div id="presets-header">
-    <span id="presets-title">WYBIERZ PRESET</span>
+    <span id="presets-title">WYBIERZ FILTR</span>
     <button id="btn-presets-back">✕ ZAMKNIJ</button>
   </div>
   <div id="presets-grid">
-    <div class="preset-tile" data-preset="kolor"><span class="tile-icon">◈</span>PIXEL SORT</div>
+    <div class="preset-tile" data-preset="kolor"><span class="tile-icon">◈</span>SORTOWANIE PIKSELI</div>
     <div class="preset-tile" data-preset="drzenie"><span class="tile-icon">⋮</span>DRŻENIE</div>
     <div class="preset-tile" data-preset="krystalizacja"><span class="tile-icon">❄</span>KRYSZTAŁ</div>
     <div class="preset-tile" data-preset="paski"><span class="tile-icon">≡</span>PASKI</div>
@@ -398,8 +453,8 @@
     <div class="preset-tile" data-preset="ekspozycja"><span class="tile-icon">✦</span>EKSPOZYCJA</div>
     <div class="preset-tile" data-preset="kalejdoskop"><span class="tile-icon">❋</span>KALEJDOSKOP</div>
     <div class="preset-tile" data-preset="kalejdoskop-kolo"><span class="tile-icon">◉</span>K. KOŁOWY</div>
-    <div class="preset-tile" data-preset="shuffle"><span class="tile-icon">⁙</span>SHUFFLE</div>
-    <div class="preset-tile" data-preset="kolor-sort"><span class="tile-icon">🎨</span>KOLOR SORT</div>
+    <div class="preset-tile" data-preset="shuffle"><span class="tile-icon">⁙</span>TASOWANIE</div>
+    <div class="preset-tile" data-preset="kolor-sort"><span class="tile-icon">🎨</span>SORTOWANIE KOLORÓW</div>
     <div class="preset-tile" data-preset="osmoza"><span class="tile-icon">〜</span>OSMOZA</div>
     <div class="preset-tile" data-preset="mobius"><span class="tile-icon">∞</span>MÖBIUS</div>
     <div class="preset-tile" data-preset="mnozenie"><span class="tile-icon">×</span>MNOŻENIE</div>
@@ -407,7 +462,7 @@
     <div class="preset-tile" data-preset="topo"><span class="tile-icon">⌇</span>TOPO</div>
     <div class="preset-tile" data-preset="elektroforeza"><span class="tile-icon">⚡</span>ELEKTRO</div>
     <div class="preset-tile" data-preset="grawitacja"><span class="tile-icon">↓</span>GRAWITACJA</div>
-    <div class="preset-tile" data-preset="multiexp"><span class="tile-icon">⊕</span>MULTI EXP</div>
+    <div class="preset-tile" data-preset="multiexp"><span class="tile-icon">⊕</span>WIELOEKSPOZYCJA</div>
     <div class="preset-tile" data-preset="pryzmat"><span class="tile-icon">⧈</span>PRYZMAT</div>
   </div>
 </div>
@@ -415,10 +470,10 @@
 <div id="screen-params">
   <div id="params-header">
     <span id="params-title">PRESET</span>
-    <button id="btn-params-back">← PRESETY</button>
+    <button id="btn-params-back">ZWIŃ ⌄</button>
   </div>
   <div id="params-body">
-    <p id="next-photo-hint" hidden style="font:12px/1.4 monospace; color:#ddd; padding:6px 0;">Ustawienia następnego zdjęcia. SAVE zapisze bieżący obraz bez zmian.</p>
+    <p id="next-photo-hint" hidden style="font:12px/1.4 monospace; color:#ddd; padding:6px 0;">Ustawienia następnego zdjęcia. ZAPISZ zapisze bieżący obraz bez zmian.</p>
     <div id="bw-row">
       <span class="param-label">TRYB</span>
       <div id="bw-toggle">
@@ -432,7 +487,7 @@
       <span class="param-value" id="val-contrast">100</span>
     </div>
     <div class="param-row" id="row-saturation">
-      <span class="param-label">SATURACJA</span>
+      <span class="param-label">NASYCENIE</span>
       <input type="range" id="sl-saturation" aria-label="Nasycenie" min="0" max="200" value="100">
       <span class="param-value" id="val-saturation">100</span>
     </div>
@@ -442,21 +497,21 @@
       <span class="param-value" id="val-brightness">0</span>
     </div>
     <div class="param-row" id="row-threshold">
-      <span class="param-label">THRESHOLD</span>
+      <span class="param-label">PRÓG</span>
       <input type="range" id="sl-threshold" aria-label="Próg" min="0" max="255" value="80">
       <span class="param-value" id="val-threshold">80</span>
     </div>
     <div class="param-row" id="row-intensity">
-      <span class="param-label">INTENSITY</span>
+      <span class="param-label">SIŁA</span>
       <input type="range" id="sl-intensity" aria-label="Intensywność" min="0" max="100" value="60">
       <span class="param-value" id="val-intensity">60</span>
     </div>
     <div id="dir-row">
       <span class="param-label">KIERUNEK</span>
       <div id="dir-toggle">
-        <button class="dir-btn active" data-dir="horizontal">HORIZ</button>
-        <button class="dir-btn" data-dir="vertical">VERT</button>
-        <button class="dir-btn" data-dir="both">BOTH</button>
+        <button class="dir-btn active" data-dir="horizontal">POZIOM</button>
+        <button class="dir-btn" data-dir="vertical">PION</button>
+        <button class="dir-btn" data-dir="both">OBA</button>
       </div>
     </div>
     <div class="param-row" id="row-extra1" style="display:none">
@@ -485,8 +540,8 @@
         <button class="kolor-btn active" data-mult="rg">R×G</button>
         <button class="kolor-btn" data-mult="rb">R×B</button>
         <button class="kolor-btn" data-mult="gb">G×B</button>
-        <button class="kolor-btn" data-mult="cross">CROSS</button>
-        <button class="kolor-btn" data-mult="power">POWER</button>
+        <button class="kolor-btn" data-mult="cross">KRZYŻOWO</button>
+        <button class="kolor-btn" data-mult="power">POTĘGA</button>
       </div>
     </div>
     <div id="row-zespolone-select" style="display:none">
@@ -512,27 +567,30 @@
         <button class="kolor-btn" data-gdir="right">→ PRAWO</button>
       </div>
     </div>
-    <!-- INFO dla MULTI EXP -->
+    <!-- INFO dla WIELOEKSPOZYCJA -->
     <div id="row-multiexp-info" style="display:none; padding: 6px 0;">
       <span class="param-label" style="width:100%; color: var(--mid); font-size:8px; line-height:1.6;">
-        ROB ZDJĘCIA — KAŻDE<br>NAKŁADA SIĘ NA POPRZEDNIE.<br>MAX 35. SAVE = GOTOWE.
+        ROB ZDJĘCIA — KAŻDE<br>NAKŁADA SIĘ NA POPRZEDNIE.<br>MAX 35. ZAPISZ = GOTOWE.
       </span>
     </div>
   </div>
 </div>
 
 <div id="bar-main">
-  <button id="btn-flip">⟳</button>
-  <button id="btn-retake">↺<br>RETAKE</button>
-  <button id="btn-shoot" aria-label="Zrób zdjęcie lub zastosuj filtr"></button>
-  <button id="btn-presets">◈<br>PRESETY</button>
-  <button id="btn-import">⬆<br>IMPORT</button>
-  <button id="btn-save">↓<br>SAVE</button>
+  <button id="btn-flip" aria-label="Zmień aparat">ZMIEŃ<br>APARAT</button>
+  <button id="btn-retake">NOWE<br>ZDJĘCIE</button>
+  <button id="btn-shoot" aria-label="Zrób zdjęcie lub zastosuj filtr">ZRÓB<br>ZDJĘCIE</button>
+  <button id="btn-presets">FILTRY</button>
+  <button id="btn-settings" aria-controls="screen-params" aria-expanded="false">SUWAKI</button>
+  <button id="btn-album" type="button">ALBUM</button>
+  <button id="btn-import">WCZYTAJ<br>ZDJĘCIE</button>
+  <button id="btn-save">ZAPISZ W<br>ALBUMIE</button>
 </div>
 
+<dialog id="photo-viewer" aria-label="Podgląd zdjęcia"><button id="photo-viewer-close">← WRÓĆ DO ALBUMU</button><img alt="Pełny podgląd zdjęcia"></dialog>
 <section id="album" hidden aria-label="Zapisane zdjęcia">
   <button id="album-close" type="button">WRÓĆ DO APARATU</button>
-  <p>DARKROOM · wersja 4.4<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
+  <p>DARKROOM · wersja 4.5<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
   <p id="storage-status"></p><button id="storage-persist" type="button">CHROŃ PAMIĘĆ ALBUMU</button>
   <nav aria-label="Strony albumu"><button id="album-prev">POPRZEDNIE</button><span id="album-page"></span><button id="album-next">NASTĘPNE</button></nav>
   <p id="album-status" role="status"></p><div id="album-list"></div>
@@ -604,7 +662,7 @@ let activeFilter = 'pixelsort';
 let bw = false;
 let currentPreset = 'kolor';
 
-// MULTI EXP state
+// WIELOEKSPOZYCJA state
 let expCount = 0;            // ile zdjęć już nałożono
 let expAccum = null;         // Float32Array — suma pikseli
 let expWidth = 0;
@@ -672,13 +730,9 @@ btnPresetsBack.addEventListener('click', () => {
   screenParams.classList.remove('active');
   document.getElementById('bar-main').style.visibility = 'visible';
 });
-btnParamsBack.addEventListener('click', () => {
-  screenParams.classList.remove('active');
-  screenPresets.classList.add('active');
-  if (window.matchMedia('(orientation: portrait)').matches) {
-    document.getElementById('bar-main').style.visibility = 'hidden';
-  }
-});
+btnParamsBack.addEventListener('click', () => screenParams.classList.remove('active'));
+document.getElementById('btn-settings').addEventListener('click', () => screenParams.classList.toggle('active'));
+new MutationObserver(() => document.getElementById('btn-settings').setAttribute('aria-expanded', screenParams.classList.contains('active'))).observe(screenParams, {attributes:true,attributeFilter:['class']});
 
 document.querySelectorAll('.preset-tile').forEach(tile => {
   tile.tabIndex = 0;
@@ -693,14 +747,14 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
     const name = tile.dataset.preset;
     const previousFilter = activeFilter;
     if ((name === 'multiexp' || previousFilter === 'multiexp') && (hasPhoto || expCount || isImported)) {
-      if (!confirm('Zmiana tego trybu odrzuci niezapisane zdjęcie. OK = odrzuć, Anuluj = wróć i zapisz przez SAVE.')) {
+      if (!confirm('Zmiana tego trybu odrzuci niezapisane zdjęcie. OK = odrzuć, Anuluj = wróć i zapisz przez ZAPISZ.')) {
         document.querySelectorAll('.preset-tile').forEach(t => t.classList.toggle('selected', t.dataset.preset === currentPreset));
         return;
       }
     }
     currentPreset = name;
     applyPreset(name);
-    if (hasPhoto && !isImported) notice("Nowe ustawienia dotyczą następnego zdjęcia. SAVE zapisze zdjęcie widoczne na ekranie.");
+    if (hasPhoto && !isImported) notice("Nowe ustawienia dotyczą następnego zdjęcia. ZAPISZ zapisze zdjęcie widoczne na ekranie.");
     screenPresets.classList.remove('active');
     screenParams.classList.add('active');
     document.getElementById('bar-main').style.visibility = 'visible';
@@ -737,7 +791,7 @@ function applyPreset(name) {
   document.getElementById('val-threshold').textContent = p.threshold;
   document.getElementById('sl-intensity').value = p.intensity;
   document.getElementById('val-intensity').textContent = p.intensity;
-  paramsTitle.textContent = name === 'multiexp' ? 'MULTI EXP' : name.toUpperCase();
+  paramsTitle.textContent = ({kolor:'SORTOWANIE PIKSELI',drzenie:'DRŻENIE',krystalizacja:'KRYSZTAŁ',sen:'ZŁY SEN','kalejdoskop-kolo':'KALEJDOSKOP KOŁOWY',shuffle:'TASOWANIE','kolor-sort':'SORTOWANIE KOLORÓW',mobius:'MÖBIUS',mnozenie:'MNOŻENIE',multiexp:'WIELOEKSPOZYCJA'})[name] || name.toUpperCase();
   document.querySelectorAll('.bw-btn').forEach(b => b.classList.toggle('active', b.dataset.bw === String(p.bw)));
   document.querySelectorAll('.dir-btn').forEach(b => b.classList.toggle('active', b.dataset.dir === p.dir));
   document.getElementById('row-threshold').style.display = NO_THRESHOLD.includes(activeFilter) ? 'none' : 'flex';
@@ -891,14 +945,14 @@ document.getElementById('file-input').addEventListener('change', async (e) => {
     document.getElementById('scanline').style.display = 'none';
     btnRetake.classList.add('visible'); btnSave.classList.add('visible');
     btnFlip.style.display = 'none';
-    statusEl.textContent = '● IMPORTED';
+    statusEl.textContent = '● WCZYTANO';
     await preparePhoto();
   } catch (error) { photoBlob = null; reportError(error); }
   finally { URL.revokeObjectURL(url); setBusy(false); }
 });
 
 // =====================
-// MULTI EXP helpers
+// WIELOEKSPOZYCJA helpers
 // =====================
 function resetMultiExp() {
   expCount = 0;
@@ -949,7 +1003,7 @@ function buildBlendedImageData() {
 }
 
 // =====================
-// IMAGE PROCESSING
+// IMAGE Przetwarzanie…
 // =====================
 // SHOOT
 btnShoot.addEventListener('click', async () => {
@@ -957,7 +1011,7 @@ btnShoot.addEventListener('click', async () => {
   if (!isImported && (video.readyState < 2 || !video.videoWidth)) { notice('Aparat jeszcze nie jest gotowy. Spróbuj za chwilę.'); return; }
   setBusy(true);
   processing.classList.add('active'); procBar.style.width = '0%';
-  statusEl.textContent = '● PROCESSING';
+  statusEl.textContent = '● Przetwarzanie…';
   flash.classList.add('on'); setTimeout(() => flash.classList.remove('on'), 150);
   try {
     const multi = activeFilter === 'multiexp';
@@ -985,7 +1039,7 @@ btnShoot.addEventListener('click', async () => {
     video.style.display = multi && !isImported ? 'block' : 'none';
     document.getElementById('scanline').style.display = 'none';
     hasPhoto = !multi;
-    if (multi) updateExpCounter(); else statusEl.textContent = '● READY';
+    if (multi) updateExpCounter(); else statusEl.textContent = '● GOTOWE';
     btnRetake.classList.add('visible'); btnSave.classList.add('visible'); btnFlip.style.display = 'none';
     screenPresets.classList.remove('active');
     document.getElementById('bar-main').style.visibility = 'visible';
@@ -999,7 +1053,7 @@ function returnToCamera() {
   document.getElementById('scanline').style.display = 'block';
   btnRetake.classList.remove('visible'); btnSave.classList.remove('visible');
   btnFlip.style.display = 'flex'; btnPresets.style.display = 'flex';
-  statusEl.textContent = '● REC';
+  statusEl.textContent = '● APARAT';
   hasPhoto = false; isImported = false; photoBlob = null; photoId = null;
   originalCanvas.width = originalCanvas.height = 1;
   hiddenCanvas.width = hiddenCanvas.height = 1;
