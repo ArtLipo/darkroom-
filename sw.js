@@ -1,6 +1,6 @@
-const CACHE_NAME = 'darkroom-v4.5.1';
+const CACHE_NAME = 'darkroom-v4.6';
 const BASE = new URL('./', self.location.href);
-const FILES = ['./', 'index.html', 'photo-store.js', 'filters.js', 'processing.js', 'filter-worker.js', 'manifest.json', 'icon-192.png', 'icon-512_1.png'];
+const FILES = ['./', 'index.html', 'photo-store.js', 'filters.js', 'processing.js', 'poincare.js', 'poincare-worker.js', 'filter-worker.js', 'manifest.json', 'icon-192.png', 'icon-512_1.png'];
 const ASSETS = FILES.map(path => new URL(path, BASE).href);
 
 self.addEventListener('install', e => {

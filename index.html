@@ -412,6 +412,32 @@ input[type=range]::-webkit-slider-thumb { width:26px; height:26px; margin-top:-1
 #params-title,.param-label,.param-value { text-shadow:none; }
 #params-title { min-width:0; overflow-wrap:anywhere; }
 #btn-params-back { flex-shrink:0; }
+
+#poincare-editor { position:fixed; inset:0; width:100%; height:100dvh; max-width:none; max-height:none; border:0; padding:0; color:#eee; background:#101010; }
+#poincare-editor[open] { display:grid; grid-template-rows:auto minmax(100px,1fr) auto auto; }
+#poincare-editor header { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid #555; }
+#poincare-editor button { padding:8px 12px; min-height:44px; background:#252525; border:1px solid #777; border-radius:6px; color:white; font:13px Arial,sans-serif; }
+#poincare-stage { min-height:0; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#000; }
+#poincare-preview { width:auto; height:auto; max-width:100%; max-height:100%; aspect-ratio:1; object-fit:contain; touch-action:none; }
+#poincare-controls { padding:10px 14px; overflow:auto; max-height:39dvh; }
+#poincare-controls label { display:flex; justify-content:space-between; font:14px Arial,sans-serif; }
+#poincare-controls input { display:block; width:100%; margin:3px 0 8px; }
+#poincare-controls p { font:12px/1.4 Arial,sans-serif; margin:0 0 10px; }
+#poincare-controls output { color:#ff9966; }
+#poincare-controls .p-actions { display:flex; gap:8px; margin-bottom:10px; }
+#poincare-status { min-height:34px; }
+#poincare-editor footer { padding:8px 12px max(8px,env(safe-area-inset-bottom)); display:flex; align-items:center; gap:12px; border-top:1px solid #555; }
+#poincare-editor footer span { flex:1; font:12px/1.4 Arial,sans-serif; }
+#poincare-editor #p-accept { background:#ff642e; color:#080808; font-weight:bold; }
+@media(orientation:landscape) {
+ #poincare-editor[open] { grid-template-columns:minmax(100px,1fr) minmax(260px,38%); grid-template-rows:auto minmax(0,1fr) auto; }
+ #poincare-editor header { grid-column:1 / -1; }
+ #poincare-stage { grid-column:1; grid-row:2 / 4; }
+ #poincare-controls { grid-column:2; grid-row:2; max-height:none; }
+ #poincare-editor footer { grid-column:2; grid-row:3; }
+ #poincare-editor footer span { display:none; }
+ #poincare-editor #p-accept { width:100%; }
+}
 </style>
 </head>
 <body>
@@ -443,6 +469,7 @@ input[type=range]::-webkit-slider-thumb { width:26px; height:26px; margin-top:-1
     <button id="btn-presets-back">✕ ZAMKNIJ</button>
   </div>
   <div id="presets-grid">
+    <div class="preset-tile" id="poincare-tile"><span class="tile-icon">◉</span>DYSK POINCARÉGO</div>
     <div class="preset-tile" data-preset="kolor"><span class="tile-icon">◈</span>SORTOWANIE PIKSELI</div>
     <div class="preset-tile" data-preset="drzenie"><span class="tile-icon">⋮</span>DRŻENIE</div>
     <div class="preset-tile" data-preset="krystalizacja"><span class="tile-icon">❄</span>KRYSZTAŁ</div>
@@ -588,9 +615,24 @@ input[type=range]::-webkit-slider-thumb { width:26px; height:26px; margin-top:-1
 </div>
 
 <dialog id="photo-viewer" aria-label="Podgląd zdjęcia"><button id="photo-viewer-close">← WRÓĆ DO ALBUMU</button><img alt="Pełny podgląd zdjęcia"></dialog>
+
+<dialog id="poincare-editor" aria-labelledby="poincare-title">
+  <header><strong id="poincare-title">DYSK POINCARÉGO</strong><button id="p-cancel">WRÓĆ</button></header>
+  <div id="poincare-stage"><canvas id="poincare-preview" width="360" height="360" aria-label="Podgląd dysku. Przesuń zdjęcie palcem lub myszą; dwoma palcami przybliż." ></canvas></div>
+  <div id="poincare-controls">
+    <p>Przesuwasz zdjęcie we wzorze. Zmiany zawsze korzystają z oryginału.</p>
+    <label for="p-zoom">Wielkość motywu <output id="p-zoom-value">100%</output></label><input aria-label="Wielkość motywu" id="p-zoom" type="range" min="50" max="400" value="100">
+    <label for="p-photo-rotation">Obrót zdjęcia <output id="p-photo-rotation-value">0°</output></label><input aria-label="Obrót zdjęcia" id="p-photo-rotation" type="range" min="-180" max="180" value="0">
+    <label for="p-disk-rotation">Obrót mozaiki <output id="p-disk-rotation-value">0°</output></label><input aria-label="Obrót mozaiki" id="p-disk-rotation" type="range" min="-180" max="180" value="0">
+    <div class="p-actions"><button id="p-center">WYŚRODKUJ</button><button id="p-original" aria-pressed="false">POKAŻ ORYGINAŁ<br><small>przytrzymaj</small></button></div>
+    <p id="poincare-status" role="status"></p>
+  </div>
+  <footer><span>Koło w kwadratowym zdjęciu • pełna jakość po zatwierdzeniu</span><button id="p-accept">ZATWIERDŹ EFEKT</button></footer>
+</dialog>
+
 <section id="album" hidden aria-label="Zapisane zdjęcia">
   <button id="album-close" type="button">WRÓĆ DO APARATU</button>
-  <p>DARKROOM · wersja 4.5.1<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
+  <p>DARKROOM · wersja 4.6<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
   <p id="storage-status"></p><button id="storage-persist" type="button">CHROŃ PAMIĘĆ ALBUMU</button>
   <nav aria-label="Strony albumu"><button id="album-prev">POPRZEDNIE</button><span id="album-page"></span><button id="album-next">NASTĘPNE</button></nav>
   <p id="album-status" role="status"></p><div id="album-list"></div>
@@ -731,7 +773,7 @@ btnPresetsBack.addEventListener('click', () => {
   document.getElementById('bar-main').style.visibility = 'visible';
 });
 btnParamsBack.addEventListener('click', () => screenParams.classList.remove('active'));
-document.getElementById('btn-settings').addEventListener('click', () => screenParams.classList.toggle('active'));
+document.getElementById('btn-settings').addEventListener('click', () => { if(window.Poincare?.selected) Poincare.open(); else screenParams.classList.toggle('active'); });
 new MutationObserver(() => document.getElementById('btn-settings').setAttribute('aria-expanded', screenParams.classList.contains('active'))).observe(screenParams, {attributes:true,attributeFilter:['class']});
 
 document.querySelectorAll('.preset-tile').forEach(tile => {
@@ -742,6 +784,8 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
   });
   tile.addEventListener('click', async () => {
     if (isBusy) return;
+    if (tile.id === 'poincare-tile') return;
+    if (window.Poincare) { Poincare.selected=false; Poincare.reset(); }
     document.querySelectorAll('.preset-tile').forEach(t => t.classList.remove('selected'));
     tile.classList.add('selected');
     const name = tile.dataset.preset;
@@ -931,6 +975,7 @@ document.getElementById('file-input').addEventListener('change', async (e) => {
     const importHeight = Math.max(1, Math.floor(img.naturalHeight * scale));
     if (scale < 1 && !confirm('To duże zdjęcie. Przetworzyć kopię ' + importWidth + ' × ' + importHeight + ' px, aby ograniczyć zużycie pamięci? Oryginalny plik pozostanie bez zmian.')) return;
     if ((hasPhoto || expCount || isImported) && !confirm('Import zastąpi niezapisane zdjęcie. Kontynuować?')) return;
+    window.Poincare?.reset();
     resetMultiExp();
     for (const target of [originalCanvas, hiddenCanvas, canvas]) {
       target.width = importWidth; target.height = importHeight;
@@ -1007,6 +1052,7 @@ function buildBlendedImageData() {
 // =====================
 // SHOOT
 btnShoot.addEventListener('click', async () => {
+  if (window.Poincare?.selected) { await Poincare.open(); return; }
   if (isBusy || hasPhoto || (activeFilter === 'multiexp' && expCount >= MAX_EXP)) return;
   if (!isImported && (video.readyState < 2 || !video.videoWidth)) { notice('Aparat jeszcze nie jest gotowy. Spróbuj za chwilę.'); return; }
   setBusy(true);
@@ -1030,7 +1076,7 @@ btnShoot.addEventListener('click', async () => {
       imageData = buildBlendedImageData();
     } else {
       const values = {};
-      document.querySelectorAll('input[type="range"]').forEach(el => { values[el.id] = el.value; });
+      document.querySelectorAll('#screen-params input[type="range"]').forEach(el => { values[el.id] = el.value; });
       imageData = await processInWorker(imageData, { values, bw, activeFilter, direction, activeHue, activeMult, activeZmode, activeEdir, activeGdir });
     }
     hiddenCanvas.width = canvas.width = vw; hiddenCanvas.height = canvas.height = vh;
@@ -1049,6 +1095,7 @@ btnShoot.addEventListener('click', async () => {
 });
 
 function returnToCamera() {
+  window.Poincare?.reset();
   canvas.style.display = 'none'; canvas.style.opacity = '1'; video.style.display = 'block';
   document.getElementById('scanline').style.display = 'block';
   btnRetake.classList.remove('visible'); btnSave.classList.remove('visible');
@@ -1094,7 +1141,7 @@ try {
 } catch (error) { console.warn('Settings unavailable', error); }
 function rememberSettings() {
   const sliders = {};
-  document.querySelectorAll('input[type="range"]').forEach(sl => { sliders[sl.id] = sl.value; });
+  document.querySelectorAll('#screen-params input[type="range"]').forEach(sl => { sliders[sl.id] = sl.value; });
   savedSettings[currentPreset] = { sliders, bw, direction, activeHue, activeMult, activeZmode, activeEdir, activeGdir };
   savedSettings.lastPreset = currentPreset;
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(savedSettings)); } catch (error) { console.warn('Cannot save settings', error); }
@@ -1123,7 +1170,7 @@ function restoreFilterSettings(name) {
   }
   document.getElementById('row-saturation').style.display = bw ? 'none' : 'flex';
 }
-document.addEventListener('input', event => { if (event.target.matches('input[type="range"]')) rememberSettings(); });
+document.addEventListener('input', event => { if (event.target.matches('#screen-params input[type="range"]')) rememberSettings(); });
 document.addEventListener('click', event => { if (event.target.closest('.bw-btn, .dir-btn, .kolor-btn, .preset-tile')) rememberSettings(); });
 if (Object.hasOwn(PRESETS, savedSettings.lastPreset)) {
   applyPreset(savedSettings.lastPreset);
@@ -1139,5 +1186,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<script src="poincare.js"></script>
 </body>
 </html>
