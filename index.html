@@ -438,6 +438,34 @@ input[type=range]::-webkit-slider-thumb { width:26px; height:26px; margin-top:-1
  #poincare-editor footer span { display:none; }
  #poincare-editor #p-accept { width:100%; }
 }
+
+#scan-editor { position:fixed; inset:0; width:100%; height:100dvh; max-width:none; max-height:none; border:0; padding:0; color:#eee; background:#101010; }
+#scan-editor[open] { display:grid; grid-template-rows:auto minmax(100px,1fr) auto auto; }
+#scan-editor header { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border-bottom:1px solid #555; }
+#scan-editor button,#scan-editor select,#scan-download { min-height:44px; padding:8px 12px; background:#252525; color:white; border:1px solid #777; border-radius:6px; font:13px Arial,sans-serif; }
+#scan-editor [hidden] { display:none!important; }
+#scan-stage { display:flex; align-items:center; justify-content:center; min-height:0; overflow:hidden; background:#000; }
+#scan-preview { width:100%; height:100%; object-fit:contain; min-height:0; }
+#scan-controls { overflow:auto; padding:12px; max-height:40dvh; }
+#scan-controls p { font:13px/1.4 Arial,sans-serif; margin:10px 0; }
+#scan-controls label { display:block; font:14px Arial,sans-serif; }
+#scan-controls output { float:right; color:#ff9966; }
+#scan-controls input { display:block; width:100%; margin:8px 0 12px; }
+#scan-controls select { display:block; width:100%; margin:8px 0; }
+#scan-directions { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+#scan-directions .active { border-color:#ff642e; color:#ffad88; }
+#scan-status { min-height:36px; }
+#scan-editor footer { display:flex; gap:8px; justify-content:center; padding:8px 12px max(8px,env(safe-area-inset-bottom)); border-top:1px solid #555; }
+#scan-start,#scan-save { background:#ff642e!important; color:#080808!important; font-weight:bold!important; }
+#scan-download { display:inline-block; text-decoration:none; }
+#scan-filter-params label { margin:14px 0; }
+@media(orientation:landscape) {
+ #scan-editor[open] { grid-template-columns:minmax(100px,1fr) minmax(260px,38%); grid-template-rows:auto minmax(0,1fr) auto; }
+ #scan-editor header { grid-column:1 / -1; }
+ #scan-stage { grid-column:1; grid-row:2 / 4; }
+ #scan-controls { grid-column:2; grid-row:2; max-height:none; }
+ #scan-editor footer { grid-column:2; grid-row:3; flex-wrap:wrap; }
+}
 </style>
 </head>
 <body>
@@ -469,6 +497,7 @@ input[type=range]::-webkit-slider-thumb { width:26px; height:26px; margin-top:-1
     <button id="btn-presets-back">✕ ZAMKNIJ</button>
   </div>
   <div id="presets-grid">
+    <div class="preset-tile" id="scan-tile"><span class="tile-icon">▥</span>SKAN W CZASIE</div>
     <div class="preset-tile" id="poincare-tile"><span class="tile-icon">◉</span>DYSK POINCARÉGO</div>
     <div class="preset-tile" data-preset="kolor"><span class="tile-icon">◈</span>SORTOWANIE PIKSELI</div>
     <div class="preset-tile" data-preset="drzenie"><span class="tile-icon">⋮</span>DRŻENIE</div>
@@ -630,9 +659,34 @@ input[type=range]::-webkit-slider-thumb { width:26px; height:26px; margin-top:-1
   <footer><span>Koło w kwadratowym zdjęciu • pełna jakość po zatwierdzeniu</span><button id="p-accept">ZATWIERDŹ EFEKT</button></footer>
 </dialog>
 
+
+<dialog id="scan-editor" aria-labelledby="scan-title">
+  <header><strong id="scan-title">SKAN W CZASIE</strong><button id="scan-close">WRÓĆ</button></header>
+  <div id="scan-stage"><canvas id="scan-preview" width="640" height="360" aria-label="Podgląd skanowania"></canvas></div>
+  <section id="scan-controls">
+    <div id="scan-setup">
+      <label for="scan-duration">Czas skanowania <output id="scan-duration-value">3 s</output></label>
+      <input id="scan-duration" aria-label="Czas skanowania" type="range" min="1" max="10" step="1" value="3">
+      <p>Kierunek ruchu linii</p>
+      <div id="scan-directions" role="group" aria-label="Kierunek skanowania">
+        <button class="active" data-direction="right" aria-pressed="true">→ W PRAWO</button><button data-direction="left" aria-pressed="false">← W LEWO</button><button data-direction="down" aria-pressed="false">↓ W DÓŁ</button><button data-direction="up" aria-pressed="false">↑ W GÓRĘ</button>
+      </div>
+      <p>Ustaw kadr. Po rozpoczęciu możesz poruszać obiektem lub telefonem — za linią obraz zostaje utrwalony.</p>
+    </div>
+    <div id="scan-effects" hidden>
+      <label for="scan-filter">Wypróbuj filtr</label><select id="scan-filter" aria-label="Filtr na skanie"></select>
+      <p>Każdy filtr działa na pierwotnym skanie. Wybierz „Bez filtra”, aby do niego wrócić.</p>
+      <div id="scan-filter-params"></div><button id="scan-apply">ZASTOSUJ FILTR</button>
+    </div>
+    <p id="scan-status" role="status"></p>
+    <div id="scan-export" hidden><p>Możesz pobrać zdjęcie bez zapisu w albumie:</p><a id="scan-download" target="_blank" rel="noopener">POBIERZ NA TELEFON</a></div>
+  </section>
+  <footer><button id="scan-start">ROZPOCZNIJ SKAN</button><button id="scan-stop" hidden>PRZERWIJ SKAN</button><button id="scan-new" hidden>NOWY SKAN</button><button id="scan-save" hidden>ZAPISZ SKAN</button></footer>
+</dialog>
+
 <section id="album" hidden aria-label="Zapisane zdjęcia">
   <button id="album-close" type="button">WRÓĆ DO APARATU</button>
-  <p>DARKROOM · wersja 4.6.1<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
+  <p>DARKROOM · wersja 4.7<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
   <p id="storage-status"></p><button id="storage-persist" type="button">CHROŃ PAMIĘĆ ALBUMU</button>
   <nav aria-label="Strony albumu"><button id="album-prev">POPRZEDNIE</button><span id="album-page"></span><button id="album-next">NASTĘPNE</button></nav>
   <p id="album-status" role="status"></p><div id="album-list"></div>
@@ -773,7 +827,7 @@ btnPresetsBack.addEventListener('click', () => {
   document.getElementById('bar-main').style.visibility = 'visible';
 });
 btnParamsBack.addEventListener('click', () => screenParams.classList.remove('active'));
-document.getElementById('btn-settings').addEventListener('click', () => { if(window.Poincare?.selected) Poincare.edit(); else screenParams.classList.toggle('active'); });
+document.getElementById('btn-settings').addEventListener('click', () => { if(window.Scan?.selected) Scan.open(); else if(window.Poincare?.selected) Poincare.edit(); else screenParams.classList.toggle('active'); });
 new MutationObserver(() => document.getElementById('btn-settings').setAttribute('aria-expanded', screenParams.classList.contains('active'))).observe(screenParams, {attributes:true,attributeFilter:['class']});
 
 document.querySelectorAll('.preset-tile').forEach(tile => {
@@ -784,7 +838,9 @@ document.querySelectorAll('.preset-tile').forEach(tile => {
   });
   tile.addEventListener('click', async () => {
     if (isBusy) return;
-    if (tile.id === 'poincare-tile') return;
+    if (tile.id === 'poincare-tile' || tile.id === 'scan-tile') return;
+    if(window.Scan) Scan.selected=false;
+    btnShoot.innerHTML='ZRÓB<br>ZDJĘCIE';btnShoot.setAttribute('aria-label','Zrób zdjęcie lub zastosuj filtr');
     if (window.Poincare) { Poincare.selected=false; Poincare.reset(); }
     document.querySelectorAll('.preset-tile').forEach(t => t.classList.remove('selected'));
     tile.classList.add('selected');
@@ -1052,6 +1108,7 @@ function buildBlendedImageData() {
 // =====================
 // SHOOT
 btnShoot.addEventListener('click', async () => {
+  if(window.Scan?.selected){await Scan.open();return;}
   if (window.Poincare?.selected) { await Poincare.open(); return; }
   if (isBusy || hasPhoto || (activeFilter === 'multiexp' && expCount >= MAX_EXP)) return;
   if (!isImported && (video.readyState < 2 || !video.videoWidth)) { notice('Aparat jeszcze nie jest gotowy. Spróbuj za chwilę.'); return; }
@@ -1187,5 +1244,6 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 <script src="poincare.js"></script>
+<script src="scan.js"></script>
 </body>
 </html>
