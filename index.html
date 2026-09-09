@@ -632,7 +632,7 @@ input[type=range]::-webkit-slider-thumb { width:26px; height:26px; margin-top:-1
 
 <section id="album" hidden aria-label="Zapisane zdjęcia">
   <button id="album-close" type="button">WRÓĆ DO APARATU</button>
-  <p>DARKROOM · wersja 4.6<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
+  <p>DARKROOM · wersja 4.6.1<br>Kopie zdjęć są zapisane w tej przeglądarce. Pobierz je lub udostępnij, zanim wyczyścisz dane aplikacji.</p>
   <p id="storage-status"></p><button id="storage-persist" type="button">CHROŃ PAMIĘĆ ALBUMU</button>
   <nav aria-label="Strony albumu"><button id="album-prev">POPRZEDNIE</button><span id="album-page"></span><button id="album-next">NASTĘPNE</button></nav>
   <p id="album-status" role="status"></p><div id="album-list"></div>
@@ -773,7 +773,7 @@ btnPresetsBack.addEventListener('click', () => {
   document.getElementById('bar-main').style.visibility = 'visible';
 });
 btnParamsBack.addEventListener('click', () => screenParams.classList.remove('active'));
-document.getElementById('btn-settings').addEventListener('click', () => { if(window.Poincare?.selected) Poincare.open(); else screenParams.classList.toggle('active'); });
+document.getElementById('btn-settings').addEventListener('click', () => { if(window.Poincare?.selected) Poincare.edit(); else screenParams.classList.toggle('active'); });
 new MutationObserver(() => document.getElementById('btn-settings').setAttribute('aria-expanded', screenParams.classList.contains('active'))).observe(screenParams, {attributes:true,attributeFilter:['class']});
 
 document.querySelectorAll('.preset-tile').forEach(tile => {

@@ -5,7 +5,7 @@ window.Poincare=(()=>{
   const controls=['p-zoom','p-photo-rotation','p-disk-rotation'];
   let source=null,worker=null,sequence=0,pending=new Map(),editing=false,finishing=false,running=null,revision=0,offsetX=0,offsetY=0,showingOriginal=false,lastPreview=null;
   const pointers=new Map();let gesture=null;
-  const api={selected:false,open,reset(){source=null;offsetX=offsetY=0;}};
+  const api={selected:false,open,edit(){if(hasPhoto||isImported||source)open();else notice("Najpierw wykadruj ujęcie i naciśnij ZRÓB ZDJĘCIE. Suwaki otworzą się po zrobieniu zdjęcia.");},reset(){source=null;offsetX=offsetY=0;}};
   function settings(){return {zoom:Number(document.getElementById('p-zoom').value)/100,photoRotation:Number(document.getElementById('p-photo-rotation').value),diskRotation:Number(document.getElementById('p-disk-rotation').value),offsetX,offsetY};}
   function stopWorker(reason=new Error("Przerwano przetwarzanie.")){if(worker)worker.terminate();worker=null;for(const p of pending.values()){clearTimeout(p.timer);p.reject(reason);}pending.clear();}
   function request(data){return new Promise((resolve,reject)=>{const id=++sequence;const timer=setTimeout(()=>{stopWorker();},90000);pending.set(id,{resolve,reject,timer});worker.postMessage({...data,id});});}
@@ -14,7 +14,7 @@ window.Poincare=(()=>{
   function schedule(){revision++;labels();try{localStorage.setItem('darkroom-poincare-v1',JSON.stringify(settings()));}catch{}if(!editing||finishing||running)return;running=pump().finally(()=>{running=null;});}
   async function pump(){let rendered=-1;while(editing&&!finishing&&rendered!==revision){rendered=revision;message.textContent='Odświeżanie podglądu…';try{const {result}=await request({type:'render',size:360,settings:settings()});if(!editing)return;if(rendered!==revision)continue;display.width=result.width;display.height=result.height;lastPreview=new ImageData(result.data,result.width,result.height);draw();message.textContent='Przesuwaj palcem • dwa palce zmieniają wielkość motywu';}catch(error){if(editing){message.textContent=error.message;document.getElementById('p-accept').disabled=true;}return;}}}
   async function open(){if(isBusy||editing)return;
-    if(!source){const input=hasPhoto?canvas:isImported?originalCanvas:video;const w=input.videoWidth||input.width,h=input.videoHeight||input.height;if(!w||!h){notice('Aparat jeszcze nie jest gotowy.');return;}source=document.createElement('canvas');source.width=w;source.height=h;source.getContext('2d').drawImage(input,0,0,w,h);offsetX=offsetY=0;}
+    if(!source){const input=(hasPhoto||expCount)?canvas:isImported?originalCanvas:video;const w=input.videoWidth||input.width,h=input.videoHeight||input.height;if(!w||!h){notice('Aparat jeszcze nie jest gotowy.');return;}source=document.createElement('canvas');source.width=w;source.height=h;source.getContext('2d').drawImage(input,0,0,w,h);offsetX=offsetY=0;}
     api.selected=true;document.querySelectorAll('.preset-tile').forEach(tile=>tile.classList.toggle('selected',tile.id==='poincare-tile'));editing=true;finishing=false;lastPreview=null;showingOriginal=false;pointers.clear();gesture=null;
     screenPresets.classList.remove('active');screenParams.classList.remove('active');document.getElementById('bar-main').style.visibility='visible';
     dialog.showModal();document.getElementById('p-cancel').focus();message.textContent='Przygotowanie podglądu…';document.getElementById('p-accept').disabled=true;
@@ -43,6 +43,15 @@ window.Poincare=(()=>{
       canvas.style.display='block';canvas.style.opacity='1';video.style.display='none';hasPhoto=true;resetMultiExp();btnRetake.classList.add('visible');btnSave.classList.add('visible');btnFlip.style.display='none';statusEl.textContent='● DYSK GOTOWY';close();notice('Gotowe. Zapisz w albumie albo otwórz SUWAKI, aby zmienić efekt.');
     }catch(error){message.textContent=error.message;}finally{finishing=false;dialog.querySelectorAll('button,input').forEach(e=>e.disabled=false);}
   };
-  document.getElementById('poincare-tile').addEventListener('click',open);
+  document.getElementById('poincare-tile').addEventListener('click',()=>{
+    if(isBusy||editing)return;
+    api.selected=true;
+    document.querySelectorAll('.preset-tile').forEach(tile=>tile.classList.toggle('selected',tile.id==='poincare-tile'));
+    screenPresets.classList.remove('active');screenParams.classList.remove('active');
+    document.getElementById('bar-main').style.visibility='visible';
+    if(hasPhoto||isImported||expCount){open();return;}
+    api.reset();statusEl.textContent='● DYSK · APARAT';
+    notice('Dysk wybrany. Wykadruj ujęcie i naciśnij ZRÓB ZDJĘCIE.');
+  });
   return api;
 })();
