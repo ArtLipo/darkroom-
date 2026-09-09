@@ -6,6 +6,7 @@ window.Scan=(()=>{
   const status=$('scan-status'),select=$('scan-filter'),params=$('scan-filter-params');
   let raw=null,result=null,rawRecord=null,record=null,scanning=false,processing=false,opened=false;
   let frameHandle=null,frameKind='',startTime=null,position=0,captureDirection='right',duration=3000,epoch=0;
+  let captureMode='straight',scanMode='straight';
   let watchdog=null,lastFrame=0,lastVideoTime=-1;
   let worker=null,job=null,exportUrl=null,savedIds=new Set();
   const api={selected:false,open};
@@ -29,7 +30,7 @@ window.Scan=(()=>{
     select.disabled=processing;
     params.querySelectorAll('input,select').forEach(e=>e.disabled=processing);
     $('scan-duration').disabled=scanning;
-    $('scan-directions').querySelectorAll('button').forEach(e=>e.disabled=scanning);
+    document.querySelectorAll('#scan-directions button,#scan-modes button,#scan-rotation button').forEach(e=>e.disabled=scanning);
   }
   function hideExport(){ $('scan-export').hidden=true;if(exportUrl){const old=exportUrl;setTimeout(()=>URL.revokeObjectURL(old),60000);exportUrl=null;} }
   function stopWorker(){if(worker)worker.terminate();worker=null;if(job){clearTimeout(job.timer);job.reject(new Error('Przerwano przetwarzanie.'));job=null;}}
@@ -57,6 +58,26 @@ window.Scan=(()=>{
     if(!opened)return;nextFrame();
   }
   function abortCapture(message){clearInterval(watchdog);scanning=false;raw=result=null;startTime=null;position=0;update();setStatus(message);}
+  // Sector radius exceeds the corner distance: the scan covers the rectangle.
+  function sector(context,w,h,from,to,reverse){
+    const sign=reverse?-1:1,radius=Math.hypot(w,h);
+    context.beginPath();context.moveTo(w/2,h/2);
+    context.arc(w/2,h/2,radius,-Math.PI/2+sign*from,-Math.PI/2+sign*to,reverse);
+    context.closePath();
+  }
+  function circularFrame(progress){
+    const reverse=captureDirection==='counterclockwise',angle=progress*Math.PI*2;
+    if(angle>position){
+      const rc=raw.getContext('2d');rc.save();
+      // Subpixel overlap blends neighbouring temporal strips without holes.
+      const overlap=.75/Math.hypot(raw.width,raw.height);
+      sector(rc,raw.width,raw.height,Math.max(0,position-overlap),angle,reverse);rc.clip();rc.drawImage(video,0,0,raw.width,raw.height);rc.restore();position=angle;
+    }
+    previewSize(raw.width,raw.height);pc.drawImage(video,0,0,preview.width,preview.height);
+    if(angle>0){pc.save();sector(pc,preview.width,preview.height,0,angle,reverse);pc.clip();pc.drawImage(raw,0,0,preview.width,preview.height);pc.restore();}
+    const a=-Math.PI/2+(reverse?-angle:angle),r=Math.hypot(preview.width,preview.height);
+    pc.beginPath();pc.moveTo(preview.width/2,preview.height/2);pc.lineTo(preview.width/2+Math.cos(a)*r,preview.height/2+Math.sin(a)*r);pc.strokeStyle='#ff642e';pc.lineWidth=3;pc.stroke();
+  }
   function frame(now){
     frameHandle=null;if(!opened)return;
     const fresh=video.currentTime!==lastVideoTime;if(fresh){lastVideoTime=video.currentTime;lastFrame=performance.now();}
@@ -67,6 +88,7 @@ window.Scan=(()=>{
     if(video.videoWidth!==raw.width||video.videoHeight!==raw.height){abortCapture('Zmienił się rozmiar obrazu aparatu. Rozpocznij skan ponownie.');nextFrame();return;}
     if(startTime===null)startTime=now;
     const progress=Math.min(1,Math.max(0,(now-startTime)/duration));
+    if(captureMode==='circular'){circularFrame(progress);}else{
     const horizontal=captureDirection==='right'||captureDirection==='left';
     const length=horizontal?raw.width:raw.height;
     const next=progress===1?length:Math.floor(length*progress);
@@ -81,13 +103,15 @@ window.Scan=(()=>{
     pc.save();pc.beginPath();if(horizontal)pc.rect(reverse?preview.width*(1-completed):0,0,preview.width*completed,preview.height);else pc.rect(0,reverse?preview.height*(1-completed):0,preview.width,preview.height*completed);pc.clip();pc.drawImage(raw,0,0,preview.width,preview.height);pc.restore();
     pc.strokeStyle='#ff642e';pc.lineWidth=3;pc.beginPath();const line=reverse?1-completed:completed;
     if(horizontal){pc.moveTo(preview.width*line,0);pc.lineTo(preview.width*line,preview.height);}else{pc.moveTo(0,preview.height*line);pc.lineTo(preview.width,preview.height*line);}pc.stroke();
+    }
     setStatus('Skanowanie… '+Math.round(progress*100)+'%');
     if(progress===1){clearInterval(watchdog);scanning=false;result=raw;record=rawRecord=null;select.value='none';buildParams();display(raw);setStatus('Skan gotowy. Zapisz go bez filtra lub wypróbuj efekt.');update();}
     nextFrame();
   }
   function start(){if(scanning||processing)return;if(video.readyState<2||!video.videoWidth||video.srcObject?.getVideoTracks()[0]?.readyState!=='live'){setStatus('Aparat jeszcze nie jest gotowy. Sprawdź dostęp do kamery i spróbuj ponownie.');if(video.srcObject?.getVideoTracks()[0]?.readyState!=='live')startCamera();return;}
     raw=document.createElement('canvas');raw.width=video.videoWidth;raw.height=video.videoHeight;
-    duration=Number($('scan-duration').value)*1000;captureDirection=document.querySelector('#scan-directions .active').dataset.direction;
+    duration=Number($('scan-duration').value)*1000;captureMode=scanMode;captureDirection=document.querySelector(captureMode==='circular'?'#scan-rotation .active':'#scan-directions .active').dataset.direction;
+    if(captureMode==='circular')raw.getContext('2d').drawImage(video,0,0,raw.width,raw.height);
     lastFrame=performance.now();watchdog=setInterval(()=>{if(scanning&&(performance.now()-lastFrame>2500||video.srcObject?.getVideoTracks()[0]?.readyState!=='live'))abortCapture('Skan przerwany: utracono obraz z aparatu. Rozpocznij ponownie.');},500);
     result=rawRecord=record=null;scanning=true;startTime=null;position=0;hideExport();update();setStatus('Skanowanie…');
   }
@@ -123,6 +147,14 @@ window.Scan=(()=>{
   $('scan-duration').oninput=()=>{$('scan-duration-value').textContent=$('scan-duration').value+' s';try{localStorage.setItem('darkroom-scan-duration',$('scan-duration').value);}catch{}};
   try{const time=Number(localStorage.getItem('darkroom-scan-duration'));if(time>=1&&time<=10)$('scan-duration').value=time;}catch{}$('scan-duration-value').textContent=$('scan-duration').value+' s';
   $('scan-directions').querySelectorAll('button').forEach(button=>button.onclick=()=>{$('scan-directions').querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});});
+  $('scan-modes').querySelectorAll('button').forEach(button=>button.onclick=()=>{
+    if(scanning)return;scanMode=button.dataset.mode;
+    $('scan-modes').querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});
+    $('scan-directions').hidden=scanMode==='circular';$('scan-rotation').hidden=scanMode!=='circular';
+    $('scan-direction-label').textContent=scanMode==='circular'?'Kierunek obrotu':'Kierunek ruchu linii';
+    $('scan-mode-hint').textContent=scanMode==='circular'?'Linia startuje u góry i obraca się wokół środka. Czas oznacza pełny obrót. Skan obejmuje cały prostokątny kadr.':'Ustaw kadr. Po rozpoczęciu możesz poruszać obiektem lub telefonem — za linią obraz zostaje utrwalony.';
+  });
+  $('scan-rotation').querySelectorAll('button').forEach(button=>button.onclick=()=>{$('scan-rotation').querySelectorAll('button').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});});
   $('scan-start').onclick=start;$('scan-stop').onclick=()=>abortCapture('Skan przerwany. Możesz rozpocząć ponownie.');
   $('scan-new').onclick=()=>{if(confirm('Rozpocząć nowy skan? Zapisane warianty pozostaną w albumie, ale utracisz dostęp do bieżącego oryginału.')){raw=result=rawRecord=record=null;hideExport();select.value='none';update();setStatus('Ustaw kadr i rozpocznij nowy skan.');}};
   $('scan-apply').onclick=apply;$('scan-save').onclick=save;$('scan-close').onclick=close;
