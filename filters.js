@@ -535,13 +535,66 @@ function applyPryzmat(imageData, grid) {
   return imageData;
 }
 
+// Fixed Voronoi masks; each cell samples a translated/rotated source fragment.
+// A 5x5 search is sufficient for one seed per square grid cell (3x3 is not).
+function applyOdlamki(imageData, size = 50, shift = 30, rotation = 10, seed = 1) {
+  if (!shift && !rotation) return imageData;
+  const {width:w, height:h, data:d} = imageData;
+  const src = new Uint8ClampedArray(d);
+  const cell = Math.max(2, Math.min(w,h) * (0.025 + size * 0.0012));
+  const cols = Math.ceil(w/cell) + 4, rows = Math.ceil(h/cell) + 4;
+  let rng = seed >>> 0;
+  function random() {
+    rng = (rng + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(rng ^ rng >>> 15, rng | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+  const cells = [];
+  for (let gy=0;gy<rows;gy++) for(let gx=0;gx<cols;gx++) {
+    const x=(gx-2+random())*cell, y=(gy-2+random())*cell;
+    const dx=(random()*2-1)*cell*shift/100;
+    const dy=(random()*2-1)*cell*shift/100;
+    const angle=(random()*2-1)*rotation*Math.PI/180;
+    cells.push({x,y,dx,dy,c:Math.cos(angle),s:Math.sin(angle)});
+  }
+  // Reflect sampling outside the photograph to avoid blank wedges and streaks.
+  function reflect(v,n) {
+    if(n===1)return 0;
+    const period=2*(n-1); v=((v%period)+period)%period;
+    return v>n-1?period-v:v;
+  }
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++) {
+    const gx=Math.floor(x/cell)+2, gy=Math.floor(y/cell)+2;
+    let best=null, distance=Infinity;
+    for(let j=gy-2;j<=gy+2;j++) for(let i=gx-2;i<=gx+2;i++) {
+      const p=cells[j*cols+i], dx=x-p.x, dy=y-p.y, dd=dx*dx+dy*dy;
+      if(dd<distance){distance=dd;best=p;}
+    }
+    const dx=x-best.x-best.dx, dy=y-best.y-best.dy;
+    const sx=reflect(best.x+best.c*dx+best.s*dy,w);
+    const sy=reflect(best.y-best.s*dx+best.c*dy,h);
+    const x0=Math.floor(sx), y0=Math.floor(sy), x1=Math.min(w-1,x0+1), y1=Math.min(h-1,y0+1);
+    const fx=sx-x0, fy=sy-y0, dst=(y*w+x)*4;
+    for(let k=0;k<4;k++) d[dst+k]=
+      (src[(y0*w+x0)*4+k]*(1-fx)+src[(y0*w+x1)*4+k]*fx)*(1-fy)+
+      (src[(y1*w+x0)*4+k]*(1-fx)+src[(y1*w+x1)*4+k]*fx)*fy;
+  }
+  return imageData;
+}
+
 function runFilter(imageData) {
   const threshold=parseInt(document.getElementById('sl-threshold').value);
   const intensity=parseInt(document.getElementById('sl-intensity').value);
   const extra1=parseInt(document.getElementById('sl-extra1').value);
   const extra2=parseInt(document.getElementById('sl-extra2').value);
   applyGlobal(imageData);
-  if(activeFilter==='drzenie') applyDisplacement(imageData, intensity);
+  if(activeFilter==='odlamki') applyOdlamki(imageData,
+    Number(document.getElementById('sl-shard-size').value),
+    Number(document.getElementById('sl-shard-shift').value),
+    Number(document.getElementById('sl-shard-rotation').value),
+    Number(document.getElementById('shard-seed').value));
+  else if(activeFilter==='drzenie') applyDisplacement(imageData, intensity);
   else if(activeFilter==='paski') applyPaski(imageData, extra1, extra2);
   else if(activeFilter==='sen') applySen(imageData, extra1, extra2);
   else if(activeFilter==='spirala') applySpirala(imageData, extra1, extra2);

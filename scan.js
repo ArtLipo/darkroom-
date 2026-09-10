@@ -142,7 +142,7 @@ window.Scan=(()=>{
     finally{processing=false;$('scan-close').disabled=false;update();}
   }
   select.add(new Option('Bez filtra — sam skan','none'));
-  for(const [key,preset]of Object.entries(PRESETS)){if(key==='multiexp')continue;const tile=document.querySelector('[data-preset="'+key+'"]');const label=tile?[...tile.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim():key;select.add(new Option(label,key));}
+  for(const [key,preset]of Object.entries(PRESETS)){if(key==='multiexp'||key==='odlamki')continue;const tile=document.querySelector('[data-preset="'+key+'"]');const label=tile?[...tile.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim():key;select.add(new Option(label,key));}
   select.onchange=()=>{hideExport();buildParams();if(select.value==='none'){result=raw;record=rawRecord;display(raw);setStatus('Pierwotny skan, bez dodatkowego filtra.');update();}else dirty();};
   $('scan-duration').oninput=()=>{$('scan-duration-value').textContent=$('scan-duration').value+' s';try{localStorage.setItem('darkroom-scan-duration',$('scan-duration').value);}catch{}};
   try{const time=Number(localStorage.getItem('darkroom-scan-duration'));if(time>=1&&time<=10)$('scan-duration').value=time;}catch{}$('scan-duration-value').textContent=$('scan-duration').value+' s';
