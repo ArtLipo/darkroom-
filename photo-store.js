@@ -135,7 +135,9 @@ async function showAlbum(reset = true) {
       download.className = 'photo-download';
       download.href = URL.createObjectURL(photo.blob); albumUrls.push(download.href);
       download.download = photo.name;
-      download.target = '_blank'; download.rel = 'noopener';
+      // Keep the direct user-initiated download in this browsing context.
+      // No new window or external tab is needed for a blob with download=.
+      download.target = '_self';
       download.addEventListener('click', () => {
         pendingDownloadUrls.set(download.href, Date.now() + 60000);
         recordExport('download');
